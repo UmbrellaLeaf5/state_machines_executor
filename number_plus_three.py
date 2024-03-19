@@ -11,17 +11,47 @@ class NumberPlusThree:
     _answer: str = ""
 
     def __init__(self, number: str,
-                 add_zeros: bool = True, zeros_coef_multi: int = 2) -> None:
-        self._number = "0"*(len(number)*zeros_coef_multi)*add_zeros + number
+                 add_zeros: bool = True, zeros_amount: int = 4) -> None:
+        """
+        Args:
+          number (str): двоичное число, по которому будет проходиться конечный автомат
+          add_zeros (bool, optional): факт необходимости незначащих доп. нулей (defaults to True)
+          zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
+        """
+
+        self._number = "0"*(zeros_amount)*add_zeros + number
 
     def Start(self) -> None:
+        """
+        Does:
+          запускает алгоритм конечного автомата
+        """
+
         self._State0()
 
     def GetAnswer(self) -> str:
+        """
+        Returns:
+          str: вывод конечного автомата
+        """
+
         return str(int(self._answer))
 
     def _DoState(self, digit: str, FuncIf0: Callable[[], None],
                  FuncIf1: Callable[[], None], make_shift: bool = True):
+        """
+        Means:
+          вспомогательная функция, отвечающая за выполнение действий 
+          в состояниях конечного автомата
+
+        Args:
+            digit (str): цифра, добавляемая к ответу
+            FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
+            FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
+            make_shift (bool, optional): факт необходимости сдвига по входному числу
+                                         (defaults to True)
+        """
+
         self._answer += digit
         if (make_shift):
             self._number = self._number[0:-1]
@@ -35,6 +65,8 @@ class NumberPlusThree:
 
         except IndexError:
             self._answer = "".join(reversed(self._answer))
+
+    # состояния:
 
     def _State0(self) -> None:
         self._DoState("", self._State1, self._State2, False)

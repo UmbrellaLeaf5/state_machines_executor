@@ -11,31 +11,64 @@ class NumberMulThree:
     _answer: str = ""
 
     def __init__(self, number: str,
-                 add_zeros: bool = True, zeros_coef_multi: int = 2) -> None:
-        self._number = "0"*(len(number)*zeros_coef_multi)*add_zeros + number
+                 add_zeros: bool = True, zeros_amount: int = 4) -> None:
+        """
+        Args:
+          number (str): двоичное число, по которому будет проходиться конечный автомат
+          add_zeros (bool, optional): факт необходимости незначащих доп. нулей (defaults to True)
+          zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
+        """
+
+        self._number = "0"*(zeros_amount)*add_zeros + number
 
     def Start(self) -> None:
+        """
+        Does:
+          запускает алгоритм конечного автомата
+        """
+
         self._State0()
 
     def GetAnswer(self) -> str:
+        """
+        Returns:
+          str: вывод конечного автомата
+        """
+
         return str(int(self._answer))
 
     def _DoState(self,  FuncIf0: Callable[[], None], digit_if_0: str,
-                 FuncIf1: Callable[[], None], digit_if_1: str):
+                 FuncIf1: Callable[[], None], digit_if_1: str,
+                 make_shift: bool = True):
+        """
+        Means:
+          вспомогательная функция, отвечающая за выполнение действий 
+          в состояниях конечного автомата
+
+        Args:
+          FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
+          digit_if_0 (str): цифра, добавляемая к ответу в случае "0 на входе"
+          FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
+          digit_if_1 (str): цифра, добавляемая к ответу в случае "1 на входе"
+        """
 
         try:
             if self._number[-1] == "1":
                 self._answer += digit_if_1
-                self._number = self._number[0:-1]
+                if (make_shift):
+                    self._number = self._number[0:-1]
                 FuncIf1()
 
             elif self._number[-1] == "0":
                 self._answer += digit_if_0
-                self._number = self._number[0:-1]
+                if (make_shift):
+                    self._number = self._number[0:-1]
                 FuncIf0()
 
         except IndexError:
             self._answer = "".join(reversed(self._answer))
+
+    # состояния:
 
     def _State0(self) -> None:
         self._DoState(self._State0, "0", self._State1, "1")
@@ -49,7 +82,6 @@ class NumberMulThree:
 
 # проверка работоспособности
 if __name__ == "__main__":
-
     for i in range(0, 100):
         print(i)
         print(bin(i)[2::])
