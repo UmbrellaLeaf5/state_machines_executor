@@ -10,8 +10,9 @@ class NumberPlusThree:
     _number: str
     _answer: str = ""
 
-    def __init__(self, number: str) -> None:
-        self._number = " " + "0"*(len(number)*2) + number
+    def __init__(self, number: str,
+                 add_zeros: bool = True, zeros_coef_multi: int = 2) -> None:
+        self._number = "0"*(len(number)*zeros_coef_multi)*add_zeros + number
 
     def Start(self) -> None:
         self._State0()
@@ -19,29 +20,24 @@ class NumberPlusThree:
     def GetAnswer(self) -> str:
         return str(int(self._answer))
 
-    def _DoState(self, digit: str, FuncIf0: Callable[[], None], FuncIf1: Callable[[], None]):
+    def _DoState(self, digit: str, FuncIf0: Callable[[], None],
+                 FuncIf1: Callable[[], None], make_shift: bool = True):
         self._answer += digit
-        self._number = self._number[0:-1]
+        if (make_shift):
+            self._number = self._number[0:-1]
 
-        if self._number[-1] == "1":
-            FuncIf1()
+        try:
+            if self._number[-1] == "0":
+                FuncIf0()
 
-        elif self._number[-1] == "0":
-            FuncIf0()
+            elif self._number[-1] == "1":
+                FuncIf1()
 
-        else:
+        except IndexError:
             self._answer = "".join(reversed(self._answer))
 
     def _State0(self) -> None:
-        # первичное состояние немного отличается от всех переходных
-        if self._number[-1] == "1":
-            self._State2()
-
-        elif self._number[-1] == "0":
-            self._State1()
-
-        else:
-            self._answer = "".join(reversed(self._answer))
+        self._DoState("", self._State1, self._State2, False)
 
     def _State1(self) -> None:
         self._DoState("1", self._State3, self._State4)
@@ -79,13 +75,14 @@ if __name__ == "__main__":
 
     for i in range(0, 100):
         print(i)
-        print(bin(i)[2::])
-        print(bin(i+3)[2::])
-        print()
+        bin_number = bin(i)[2::]
+        real_answer: str = bin(i+3)[2::]
+        print("bin number: " + bin_number)
+        print("real answer: " + real_answer)
 
         machine = NumberPlusThree(bin(i)[2::])
         machine.Start()
-        print(machine.GetAnswer())
+        print("machine ans: " + machine.GetAnswer())
         print()
         assert (bin(i+3)[2::] == machine.GetAnswer())
         print()
