@@ -3,7 +3,7 @@ from typing import Callable
 
 class NumberPlusThree:
     """
-    MEANS: 
+    Means: 
       конечный автомат Мура, который выводит двоичное число, сложенное с тройкой (bin: 11)
     """
 
@@ -58,9 +58,11 @@ class NumberPlusThree:
 
         try:
             if self._number[-1] == "0":
+                # выполняем функцию, соотв. "0 на входе"
                 FuncIf0()
 
             elif self._number[-1] == "1":
+                # выполняем функцию, соотв. "1 на входе"
                 FuncIf1()
 
         except IndexError:
