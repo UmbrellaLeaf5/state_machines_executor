@@ -1,7 +1,7 @@
 from typing import Callable
 
 
-class NumberMulThree:
+class NumberMulThreePlusTwo:
     """
     Means: 
       конечный автомат Мили, который выводит двоичное число, 
@@ -12,7 +12,7 @@ class NumberMulThree:
     _answer: str = ""
 
     def __init__(self, number: str,
-                 add_zeros: bool = True, zeros_amount: int = 4) -> None:
+                 add_zeros: bool = True, zeros_amount: int = 4, should_start=True) -> None:
         """
         Args:
           number (str): двоичное число, по которому будет проходиться конечный автомат
@@ -21,6 +21,9 @@ class NumberMulThree:
         """
 
         self._number = "0"*(zeros_amount)*add_zeros + number
+
+        if (should_start):
+            self.Start()
 
     def Start(self) -> None:
         """
@@ -108,17 +111,20 @@ class NumberMulThree:
 if __name__ == "__main__":
     for i in range(0, 100):
         print(i)
-        print(bin(i)[2::])
-        print("real answer: " + bin(i*3+2)[2::])
 
-        machine = NumberMulThree(bin(i)[2::])
-        machine.Start()
+        curr_number = bin(i)[2::]
+        print("curr number: " + curr_number)
+
+        real_answer: str = bin(i*3+2)[2::]
+        print("real answer: " + real_answer)
+
+        machine = NumberMulThreePlusTwo(bin(i)[2::])
         print("machine ans: " + machine.GetAnswer())
 
         print()
         print()
 
-    for i in range(0, 10000, 2):
-        machine = NumberMulThree(bin(i)[2::], add_zeros=True, zeros_amount=8)
-        machine.Start()
+    # bigger testing
+    for i in range(0, 10000, 2):  # TEMP:  2
+        machine = NumberMulThreePlusTwo(bin(i)[2::])
         assert (bin(i*3+2)[2::] == machine.GetAnswer())
