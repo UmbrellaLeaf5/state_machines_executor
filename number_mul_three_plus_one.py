@@ -105,13 +105,13 @@ if __name__ == "__main__":
         print(i)
 
         curr_number = bin(i)[2::]
-        print("curr number: " + curr_number)
+        print(f"curr number: {curr_number}")
 
         real_answer: str = bin(i*3+1)[2::]
-        print("real answer: " + real_answer)
+        print(f"real answer: {real_answer}")
 
         machine = NumberMulThreePlusOne(bin(i)[2::])
-        print("machine ans: " + machine.GetAnswer())
+        print(f"machine ans: {machine.GetAnswer()}")
 
         print()
         print()
