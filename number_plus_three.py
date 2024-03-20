@@ -1,5 +1,4 @@
 from typing import Callable
-from inspect import currentframe, getouterframes
 
 
 class NumberPlusThree:
@@ -41,24 +40,22 @@ class NumberPlusThree:
 
         return str(int(self._answer))
 
-    def _DoState(self, digit: str, FuncIf0: Callable[[], None],
-                 FuncIf1: Callable[[], None]):
+    def _DoState(self, FuncIf0: Callable[[], None],
+                 FuncIf1: Callable[[], None], digit: str = ""):
         """
         Means:
           вспомогательная функция, отвечающая за выполнение действий 
           в состояниях конечного автомата
 
         Args:
-            digit (str): цифра, добавляемая к ответу
             FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
             FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
+            digit (str, optional): цифра, добавляемая к ответу (defaults to "")
         """
 
         make_shift: bool = True
 
-        prev_func = getouterframes(currentframe())[1].function
-
-        if prev_func == "_State0":
+        if digit == "":
             make_shift = False
 
         self._answer += digit
@@ -80,27 +77,27 @@ class NumberPlusThree:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState("", self._State1, self._State2)
+        self._DoState(self._State1, self._State2)
 
     def _State1(self) -> None:
-        self._DoState("1", self._State3, self._State4)
+        self._DoState(self._State3, self._State4, "1")
 
     def _State2(self) -> None:
-        self._DoState("0", self._State4, self._State1)
+        self._DoState(self._State4, self._State1, "0")
 
     def _State3(self) -> None:
-        self._DoState("1", self._State5, self._State3)
+        self._DoState(self._State5, self._State3, "1")
 
     def _State4(self) -> None:
-        self._DoState("0", self._State3, self._State4)
+        self._DoState(self._State3, self._State4, "0")
 
     def _State5(self) -> None:
-        self._DoState("0", self._State5, self._State3)
+        self._DoState(self._State5, self._State3, "0")
 
 
 # проверка работоспособности
 if __name__ == "__main__":
-    for i in range(0, 10):
+    for i in range(0, 100):
         print(i)
 
         curr_number = bin(i)[2::]
@@ -116,6 +113,6 @@ if __name__ == "__main__":
         print()
 
     # bigger testing
-    for i in range(0, 100):
+    for i in range(0, 10000):
         machine = NumberPlusThree(bin(i)[2::])
         assert (bin(i+3)[2::] == machine.GetAnswer())
