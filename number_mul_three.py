@@ -94,6 +94,11 @@ if __name__ == "__main__":
         machine = NumberMulThree(bin(i)[2::])
         machine.Start()
         print("machine ans: " + machine.GetAnswer())
+
         print()
+        print()
+
+    for i in range(0, 10000):
+        machine = NumberMulThree(bin(i)[2::])
+        machine.Start()
         assert (bin(i*3)[2::] == machine.GetAnswer())
-        print()

@@ -92,26 +92,16 @@ class NumberMulThree:
         self._DoState(self._State3, "0", self._State4, "1")
 
     def _State5(self) -> None:
-        self._DoState(self._State6, "0", self._State8, "1")
+        self._DoState(self._State6, "0", self._State7, "1")
 
     def _State6(self) -> None:
-        self._DoState(self._State2, "1", self._State9, "0")
+        self._DoState(self._State2, "1", self._State8, "0")
 
     def _State7(self) -> None:
-        self._DoState(self._State2, "0", self._StateEnd, "")
+        self._DoState(self._State3, "0", self._State7, "1")
 
     def _State8(self) -> None:
-        self._DoState(self._State3, "0", self._State8, "1")
-
-    def _State9(self) -> None:
-        self._DoState(self._State6, "0", self._State8, "1")
-
-    def _State10(self) -> None:
-        self._DoState(self._State3, "0", self._StateEnd, "")
-
-    def _StateEnd(self) -> None:
-        self._answer += "2"
-        self._answer = "".join(reversed(self._answer))
+        self._DoState(self._State6, "0", self._State7, "1")
 
 
 # проверка работоспособности
@@ -119,12 +109,16 @@ if __name__ == "__main__":
     for i in range(0, 100):
         print(i)
         print(bin(i)[2::])
-        print("!temp answer: " + bin(i*3)[2::])
         print("real answer: " + bin(i*3+1)[2::])
 
-        machine = NumberMulThree(bin(i)[2::], add_zeros=True, zeros_amount=8)
+        machine = NumberMulThree(bin(i)[2::])
         machine.Start()
         print("machine ans: " + machine.GetAnswer())
+
         print()
+        print()
+
+    for i in range(0, 10000):
+        machine = NumberMulThree(bin(i)[2::])
+        machine.Start()
         assert (bin(i*3+1)[2::] == machine.GetAnswer())
-        print()
