@@ -41,8 +41,7 @@ class NumberMulThree:
         return str(int(self._answer))
 
     def _DoState(self,  FuncIf0: Callable[[], None], digit_if_0: str,
-                 FuncIf1: Callable[[], None], digit_if_1: str,
-                 make_shift: bool = True):
+                 FuncIf1: Callable[[], None], digit_if_1: str):
         """
         Means:
           вспомогательная функция, отвечающая за выполнение действий 
@@ -58,16 +57,14 @@ class NumberMulThree:
         try:
             if self._number[-1] == "0":
                 self._answer += digit_if_0
-                if (make_shift):
-                    self._number = self._number[0:-1]
+                self._number = self._number[0:-1]
 
                 # выполняем функцию, соотв. "0 на входе"
                 FuncIf0()
 
             elif self._number[-1] == "1":
                 self._answer += digit_if_1
-                if (make_shift):
-                    self._number = self._number[0:-1]
+                self._number = self._number[0:-1]
 
                 # выполняем функцию, соотв. "1 на входе"
                 FuncIf1()

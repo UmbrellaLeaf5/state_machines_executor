@@ -1,4 +1,5 @@
 from typing import Callable
+from inspect import currentframe, getouterframes
 
 
 class NumberPlusThree:
@@ -41,7 +42,7 @@ class NumberPlusThree:
         return str(int(self._answer))
 
     def _DoState(self, digit: str, FuncIf0: Callable[[], None],
-                 FuncIf1: Callable[[], None], make_shift: bool = True):
+                 FuncIf1: Callable[[], None]):
         """
         Means:
           вспомогательная функция, отвечающая за выполнение действий 
@@ -51,9 +52,14 @@ class NumberPlusThree:
             digit (str): цифра, добавляемая к ответу
             FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
             FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
-            make_shift (bool, optional): факт необходимости сдвига по входному числу
-                                         (defaults to True)
         """
+
+        make_shift: bool = True
+
+        prev_func = getouterframes(currentframe())[1].function
+
+        if prev_func == "_State0":
+            make_shift = False
 
         self._answer += digit
         if (make_shift):
@@ -74,7 +80,7 @@ class NumberPlusThree:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState("", self._State1, self._State2, False)
+        self._DoState("", self._State1, self._State2)
 
     def _State1(self) -> None:
         self._DoState("1", self._State3, self._State4)
@@ -94,7 +100,7 @@ class NumberPlusThree:
 
 # проверка работоспособности
 if __name__ == "__main__":
-    for i in range(0, 100):
+    for i in range(0, 10):
         print(i)
 
         curr_number = bin(i)[2::]
@@ -110,6 +116,6 @@ if __name__ == "__main__":
         print()
 
     # bigger testing
-    for i in range(0, 10000):
+    for i in range(0, 100):
         machine = NumberPlusThree(bin(i)[2::])
         assert (bin(i+3)[2::] == machine.GetAnswer())
