@@ -76,13 +76,13 @@ class NumberMulThree:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState(self._State1, "0", self._StateEnd, "")
+        self._DoState(self._State1, "0", self._State2, "1")
 
     def _State1(self) -> None:
-        self._DoState(self._State3, "1", self._StateEnd, "")
+        self._DoState(self._State3, "1", self._State6, "0")
 
-    # def _State2(self) -> None:
-    #     self._DoState(self._State1, "0", self._StateEnd, "")
+    def _State2(self) -> None:
+        self._DoState(self._StateEnd, "", self._StateEnd, "")
 
     def _State3(self) -> None:
         self._DoState(self._State3, "0", self._State4, "1")
@@ -93,11 +93,23 @@ class NumberMulThree:
     def _State5(self) -> None:
         self._DoState(self._State4, "0", self._State5, "1")
 
+    def _State6(self) -> None:
+        self._DoState(self._State8, "0", self._State7, "1")
+
+    def _State7(self) -> None:
+        self._DoState(self._State4, "0", self._State7, "1")
+
+    def _State8(self) -> None:
+        self._DoState(self._State3, "1", self._State9, "0")
+
+    def _State9(self) -> None:
+        self._DoState(self._State8, "0", self._State7, "1")
+
     def _StateEnd(self) -> None:
         self._answer += "2"
+        self._answer = "".join(reversed(self._answer))
 
 
-# проверка работоспособности
 # проверка работоспособности
 if __name__ == "__main__":
     for i in range(0, 100):
