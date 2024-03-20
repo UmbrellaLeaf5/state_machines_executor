@@ -5,7 +5,7 @@ class NumberMulThree:
     """
     Means: 
       конечный автомат Мили, который выводит двоичное число, 
-      умноженное на три, сложенное с двойкой (bin: (*11) + 2)
+      умноженное на три, сложенное с единицей (bin: (*11) + 1)
     """
 
     _number: str
@@ -37,6 +37,7 @@ class NumberMulThree:
         """
 
         return str(int(self._answer))
+        # return self._answer
 
     def _DoState(self,  FuncIf0: Callable[[], None], digit_if_0: str,
                  FuncIf1: Callable[[], None], digit_if_1: str,
@@ -76,25 +77,41 @@ class NumberMulThree:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState(self._State1, "0", self._StateEnd, "")
+        self._DoState(self._State1, "1", self._State5, "0")
 
     def _State1(self) -> None:
-        self._DoState(self._State3, "1", self._StateEnd, "")
+        self._DoState(self._State2, "0", self._State3, "1")
 
-    # def _State2(self) -> None:
-    #     self._DoState(self._State1, "0", self._StateEnd, "")
+    def _State2(self) -> None:
+        self._DoState(self._State2, "0", self._State3, "1")
 
     def _State3(self) -> None:
-        self._DoState(self._State3, "0", self._State4, "1")
+        self._DoState(self._State2, "1", self._State4, "0")
 
     def _State4(self) -> None:
-        self._DoState(self._State3, "1", self._State5, "0")
+        self._DoState(self._State3, "0", self._State4, "1")
 
     def _State5(self) -> None:
-        self._DoState(self._State4, "0", self._State5, "1")
+        self._DoState(self._State6, "0", self._State8, "1")
+
+    def _State6(self) -> None:
+        self._DoState(self._State2, "1", self._State9, "0")
+
+    def _State7(self) -> None:
+        self._DoState(self._State2, "0", self._StateEnd, "")
+
+    def _State8(self) -> None:
+        self._DoState(self._State3, "0", self._State8, "1")
+
+    def _State9(self) -> None:
+        self._DoState(self._State6, "0", self._State8, "1")
+
+    def _State10(self) -> None:
+        self._DoState(self._State3, "0", self._StateEnd, "")
 
     def _StateEnd(self) -> None:
         self._answer += "2"
+        self._answer = "".join(reversed(self._answer))
 
 
 # проверка работоспособности
@@ -102,11 +119,12 @@ if __name__ == "__main__":
     for i in range(0, 100):
         print(i)
         print(bin(i)[2::])
-        print("real answer: " + bin(i*3+2)[2::])
+        print("!temp answer: " + bin(i*3)[2::])
+        print("real answer: " + bin(i*3+1)[2::])
 
-        machine = NumberMulThree(bin(i)[2::])
+        machine = NumberMulThree(bin(i)[2::], add_zeros=True, zeros_amount=8)
         machine.Start()
         print("machine ans: " + machine.GetAnswer())
         print()
-        # assert (bin(i*3+2)[2::] == machine.GetAnswer())
+        assert (bin(i*3+1)[2::] == machine.GetAnswer())
         print()
