@@ -77,31 +77,16 @@ class NumberPlusThree:
         self._DoState("1", self._State3, self._State4)
 
     def _State2(self) -> None:
-        self._DoState("0", self._State5, self._State6)
+        self._DoState("0", self._State4, self._State1)
 
     def _State3(self) -> None:
-        self._DoState("1", self._State9, self._State10)
+        self._DoState("1", self._State5, self._State3)
 
     def _State4(self) -> None:
-        self._DoState("0", self._State7, self._State8)
+        self._DoState("0", self._State3, self._State4)
 
     def _State5(self) -> None:
-        self._DoState("0", self._State7, self._State8)
-
-    def _State6(self) -> None:
-        self._DoState("1", self._State7, self._State8)
-
-    def _State7(self) -> None:
-        self._DoState("1", self._State9, self._State10)
-
-    def _State8(self) -> None:
-        self._DoState("0", self._State7, self._State8)
-
-    def _State9(self) -> None:
-        self._DoState("0", self._State9, self._State10)
-
-    def _State10(self) -> None:
-        self._DoState("1", self._State9, self._State10)
+        self._DoState("0", self._State5, self._State3)
 
 
 # проверка работоспособности
