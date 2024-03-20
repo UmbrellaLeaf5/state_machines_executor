@@ -100,10 +100,7 @@ class NumberMulThree:
         self._DoState(self._State4, "0", self._State7, "1")
 
     def _State8(self) -> None:
-        self._DoState(self._State3, "1", self._State9, "0")
-
-    def _State9(self) -> None:
-        self._DoState(self._State8, "0", self._State7, "1")
+        self._DoState(self._State3, "1", self._State6, "0")
 
     def _StateEnd(self) -> None:
         self._answer += "2"
@@ -124,7 +121,7 @@ if __name__ == "__main__":
         print()
         print()
 
-    # for i in range(0, 10000):
-    #     machine = NumberMulThree(bin(i)[2::], add_zeros=True, zeros_amount=8)
-    #     machine.Start()
-    #     assert (bin(i*3+2)[2::] == machine.GetAnswer())
+    for i in range(0, 10000, 2):
+        machine = NumberMulThree(bin(i)[2::], add_zeros=True, zeros_amount=8)
+        machine.Start()
+        assert (bin(i*3+2)[2::] == machine.GetAnswer())

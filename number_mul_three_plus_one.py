@@ -77,31 +77,25 @@ class NumberMulThree:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState(self._State1, "1", self._State5, "0")
+        self._DoState(self._State1, "1", self._State4, "0")
 
     def _State1(self) -> None:
-        self._DoState(self._State2, "0", self._State3, "1")
+        self._DoState(self._State1, "0", self._State2, "1")
 
     def _State2(self) -> None:
-        self._DoState(self._State2, "0", self._State3, "1")
+        self._DoState(self._State1, "1", self._State3, "0")
 
     def _State3(self) -> None:
-        self._DoState(self._State2, "1", self._State4, "0")
+        self._DoState(self._State2, "0", self._State3, "1")
 
     def _State4(self) -> None:
-        self._DoState(self._State3, "0", self._State4, "1")
+        self._DoState(self._State5, "0", self._State6, "1")
 
     def _State5(self) -> None:
-        self._DoState(self._State6, "0", self._State7, "1")
+        self._DoState(self._State1, "1", self._State4, "0")
 
     def _State6(self) -> None:
-        self._DoState(self._State2, "1", self._State8, "0")
-
-    def _State7(self) -> None:
-        self._DoState(self._State3, "0", self._State7, "1")
-
-    def _State8(self) -> None:
-        self._DoState(self._State6, "0", self._State7, "1")
+        self._DoState(self._State2, "0", self._State6, "1")
 
 
 # проверка работоспособности
