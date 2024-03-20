@@ -76,32 +76,25 @@ class NumberMulThreePlusTwo:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState(self._State1, "0", self._State2, "1")
+        self._DoState(self._State1, "0", self._State0, "1")
 
     def _State1(self) -> None:
-        self._DoState(self._State3, "1", self._State6, "0")
+        self._DoState(self._State2, "1", self._State5, "0")
 
     def _State2(self) -> None:
-        self._DoState(self._StateEnd, "", self._StateEnd, "")
+        self._DoState(self._State2, "0", self._State3, "1")
 
     def _State3(self) -> None:
-        self._DoState(self._State3, "0", self._State4, "1")
+        self._DoState(self._State2, "1", self._State4, "0")
 
     def _State4(self) -> None:
-        self._DoState(self._State3, "1", self._State5, "0")
+        self._DoState(self._State3, "0", self._State4, "1")
 
     def _State5(self) -> None:
-        self._DoState(self._State4, "0", self._State5, "1")
+        self._DoState(self._State1, "0", self._State6, "1")
 
     def _State6(self) -> None:
-        self._DoState(self._State1, "0", self._State7, "1")
-
-    def _State7(self) -> None:
-        self._DoState(self._State4, "0", self._State7, "1")
-
-    def _StateEnd(self) -> None:
-        self._answer += "2"
-        self._answer = "".join(reversed(self._answer))
+        self._DoState(self._State3, "0", self._State6, "1")
 
 
 # проверка работоспособности
@@ -122,6 +115,6 @@ if __name__ == "__main__":
         print()
 
     # bigger testing
-    for i in range(0, 10000, 2):  # TEMP:  2
+    for i in range(0, 10000):
         machine = NumberMulThreePlusTwo(bin(i)[2::])
         assert (bin(i*3+2)[2::] == machine.GetAnswer())
