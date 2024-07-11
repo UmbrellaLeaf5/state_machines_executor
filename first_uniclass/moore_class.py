@@ -15,11 +15,11 @@ class MooreMachine:
           states_dict (dict[int, list[int | str]]): _description_
           add_zeros (bool, optional): факт необходимости незначащих доп. нулей (defaults to True)
           zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
-          should_start (bool, optional): _description_. Defaults to True.
+          should_start (bool, optional): факт необходимости начала работы автомата (defaults to True)
         """
 
         self._states_dict = states_dict
-        self._Check_States_Dict()
+        self._CheckStatesDict()
 
         self._number = "0"*(zeros_amount)*add_zeros + number
 
@@ -74,7 +74,7 @@ class MooreMachine:
         except IndexError:
             self._answer = "".join(reversed(self._answer))
 
-    def _Check_States_Dict(self) -> None:
+    def _CheckStatesDict(self) -> None:
         """
         Does:
           проверяет, что словарь `self._states_dict` соответствует структуре
@@ -84,16 +84,17 @@ class MooreMachine:
         """
         for key, value in self._states_dict.items():
             if not isinstance(key, int):
-                raise ValueError("states_dict: Not all keys are ints")
+                raise ValueError("states_dict: not all keys are ints")
 
             if not isinstance(value, list) or len(value) != 3:
-                raise ValueError("states_dict: Not all states are lists of 3")
+                raise ValueError("states_dict: not all states are lists of 3")
 
             for item in value:
                 if not isinstance(item, (int, str)):
-                    raise ValueError("states_dict: Extra value type in states")
+                    raise ValueError("states_dict: extra value type in states")
 
-                if isinstance(item, str) and not (item == "1" or item == "0" or item == ""):
+                if isinstance(item, str) and item not in ("1", "0", "") or \
+                   isinstance(item, int) and item == value[-1] and item not in (1, 0):
                     raise ValueError("states_dict: the value of state is not binary")
 
 
@@ -101,11 +102,11 @@ class MooreMachine:
 if __name__ == "__main__":
     # словарь конечного автомата, который прибавляет 3 (bin: 11) к исходному числу
     plus_three_states_dict: dict[int, list[int | str]] = {0: [1, 2, ""],
-                                                          1: [3, 4, "1"],
+                                                          1: [3, 4, 1],
                                                           2: [4, 1, "0"],
                                                           3: [5, 3, "1"],
                                                           4: [3, 4, "0"],
-                                                          5: [5, 3, "0"]}
+                                                          5: [5, 3, 0]}
     for i in range(0, 100):
         print(i)
 
