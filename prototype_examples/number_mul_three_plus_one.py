@@ -47,7 +47,7 @@ class NumberMulThreePlusOne:
                  ):
         """
         Means:
-          вспомогательная функция, отвечающая за выполнение действий 
+          Вспомогательная функция, отвечающая за выполнение действий 
           в состояниях конечного автомата
 
         Args:
@@ -113,7 +113,6 @@ if __name__ == "__main__":
         machine = NumberMulThreePlusOne(bin(i)[2::])
         print(f"machine ans: {machine.GetAnswer()}")
 
-        print()
         print()
 
     # bigger testing

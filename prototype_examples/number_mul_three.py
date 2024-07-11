@@ -4,7 +4,7 @@ from typing import Callable
 class NumberMulThree:
     """
     Means: 
-      конечный автомат Мили, который выводит двоичное число, умноженное на три (bin: 11)
+      Конечный автомат Мили, который выводит двоичное число, умноженное на три (bin: 11)
     """
 
     _number: str
@@ -44,7 +44,7 @@ class NumberMulThree:
                  FuncIf1: Callable[[], None], digit_if_1: str):
         """
         Means:
-          вспомогательная функция, отвечающая за выполнение действий 
+          Вспомогательная функция, отвечающая за выполнение действий 
           в состояниях конечного автомата
 
         Args:
@@ -98,7 +98,6 @@ if __name__ == "__main__":
         machine = NumberMulThree(bin(i)[2::])
         print(f"machine ans: {machine.GetAnswer()}")
 
-        print()
         print()
 
     # bigger testing

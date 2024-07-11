@@ -4,7 +4,7 @@ from typing import Callable
 class NumberPlusThree:
     """
     Means: 
-      конечный автомат Мура, который выводит двоичное число, сложенное с тройкой (bin: 11)
+      Конечный автомат Мура, который выводит двоичное число, сложенное с тройкой (bin: 11)
     """
 
     _number: str
@@ -44,7 +44,7 @@ class NumberPlusThree:
                  FuncIf1: Callable[[], None], digit: str = ""):
         """
         Means:
-          вспомогательная функция, отвечающая за выполнение действий 
+          Вспомогательная функция, отвечающая за выполнение действий 
           в состояниях конечного автомата
 
         Args:
@@ -109,7 +109,6 @@ if __name__ == "__main__":
         machine = NumberPlusThree(bin(i)[2::])
         print(f"machine ans: {machine.GetAnswer()}")
 
-        print()
         print()
 
     # bigger testing
