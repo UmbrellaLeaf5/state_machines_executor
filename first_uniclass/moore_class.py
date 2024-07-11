@@ -1,6 +1,6 @@
 class MooreMachine:
     """
-      Means: 
+      Means:
         Шаблон класса конечного автомата Мура
     """
     _number: str
@@ -21,7 +21,7 @@ class MooreMachine:
         self._states_dict = states_dict
         self._CheckStatesDict()
 
-        self._number = "0"*(zeros_amount)*add_zeros + number
+        self._number = number.zfill(len(number) + zeros_amount * add_zeros)
 
         if (should_start):
             self.Start()
@@ -32,7 +32,7 @@ class MooreMachine:
           запускает алгоритм конечного автомата
         """
 
-        self._DoState(self._states_dict.get(0))
+        self._DoState(0)
 
     def GetAnswer(self) -> str:
         """
@@ -42,18 +42,18 @@ class MooreMachine:
 
         return str(int(self._answer))
 
-    def _DoState(self, state: list[int | str]):
+    def _DoState(self, state_id: int):
         """
         Means:
           Вспомогательная функция, отвечающая за выполнение действий
           в состояниях конечного автомата
 
         Args:
-          state (list[int | str]): список, олицетворяющий состояние автомата
+          state_id (int): номер состояния
         """
         make_shift: bool = True
 
-        digit = str(state[-1])
+        digit = str(self._states_dict.get(state_id)[-1])
 
         if digit == "":
             make_shift = False
@@ -63,13 +63,8 @@ class MooreMachine:
             self._number = self._number[0:-1]
 
         try:
-            if self._number[-1] == "0":
-                # выполняем функцию, соотв. "0 на входе"
-                self._DoState(self._states_dict.get(state[0]))
-
-            elif self._number[-1] == "1":
-                # выполняем функцию, соотв. "1 на входе"
-                self._DoState(self._states_dict.get(state[1]))
+            next: int = int(self._number[-1])  # следующее число на вход (последнее в изначальном)
+            self._DoState(self._states_dict.get(state_id)[next])
 
         except IndexError:
             self._answer = "".join(reversed(self._answer))
