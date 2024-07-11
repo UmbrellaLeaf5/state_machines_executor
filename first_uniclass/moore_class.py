@@ -53,18 +53,18 @@ class MooreMachine:
         """
         make_shift: bool = True
 
-        digit = str(self._states_dict.get(state_id)[-1])
+        digit = str(self._states_dict.get(state_id)[-1])  # type: ignore
 
         if digit == "":
             make_shift = False
 
         self._answer += digit
         if (make_shift):
-            self._number = self._number[0:-1]
+            self._number = self._number[:-1]
 
         try:
             next: int = int(self._number[-1])  # следующее число на вход (последнее в изначальном)
-            self._DoState(self._states_dict.get(state_id)[next])
+            self._DoState(self._states_dict.get(state_id)[next])  # type: ignore
 
         except IndexError:
             self._answer = "".join(reversed(self._answer))
@@ -87,6 +87,10 @@ class MooreMachine:
             for item in value:
                 if not isinstance(item, (int, str)):
                     raise ValueError("states_dict: extra value type in states")
+
+                if isinstance(item, int) and item in value[:-1] and \
+                   item not in self._states_dict.keys():
+                    raise ValueError(f"states_dict: extra key {item}")
 
                 if isinstance(item, str) and item not in ("1", "0", "") or \
                    isinstance(item, int) and item == value[-1] and item not in (1, 0):
