@@ -1,7 +1,7 @@
 class MooreMachine:
     """
-      Means:
-        Шаблон класса конечного автомата Мура
+    Means:
+      Шаблон класса конечного автомата Мура
     """
     _number: str
     _answer: str = ""

@@ -4,7 +4,7 @@ from examples.number_mul_three_plus_two import NumberMulThreePlusTwo
 from examples.number_mul_three import NumberMulThree
 
 if __name__ == "__main__":
-    NumberPlusThree()
+    # NumberPlusThree()
     # NumberMulThreePlusOne()
     # NumberMulThreePlusTwo()
-    # NumberMulThree()
+    NumberMulThree()

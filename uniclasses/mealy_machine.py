@@ -1,7 +1,3 @@
-
-from typing import Callable
-
-
 class MealyMachine:
     """
     Means: 
@@ -58,19 +54,13 @@ class MealyMachine:
         """
 
         try:
-            if self._number[-1] == "0":
-                self._answer += self._states_dict.get(state_id)[1]
-                self._number = self._number[0:-1]
+            digit: int = (int(self._number[-1]) % 2) * 2
+            next_state_id: int = digit + 1
 
-                # выполняем функцию, соотв. "0 на входе"
-                self._DoState(self._states_dict.get(state_id)[0])
+            self._answer += self._states_dict.get(state_id)[next_state_id]  # type: ignore
+            self._number = self._number[0:-1]
 
-            elif self._number[-1] == "1":
-                self._answer += self._states_dict.get(state_id)[3]
-                self._number = self._number[0:-1]
-
-                # выполняем функцию, соотв. "1 на входе"
-                self._DoState(self._states_dict.get(state_id)[2])
+            self._DoState(self._states_dict.get(state_id)[digit])  # type: ignore
 
         except IndexError:
             self._answer = "".join(reversed(self._answer))
@@ -104,38 +94,3 @@ class MealyMachine:
                     if isinstance(item, str) and item not in ("1", "0", "") or \
                        isinstance(item, int) and item == value[-1] and item not in (1, 0):
                         raise ValueError("states_dict: the value of state is not binary")
-
-
-# проверка работоспособности
-def NumberMulThree() -> None:
-    print("NumberMulThree")
-
-    print()
-
-    # словарь конечного автомата, который умножает на 3 (bin: 11) исходное число
-    plus_mul_states_dict: dict[int, list[int | str]] = {0: [0, "0", 1, "1"],
-                                                        1: [0, "1", 2, "0"],
-                                                        2: [1, "0", 2, "1"]}
-
-    for i in range(0, 100):
-        print(i)
-
-        curr_number = bin(i)[2::]
-        print(f"curr number: {curr_number}")
-
-        real_answer: str = bin(i*3)[2::]
-        print(f"real answer: {real_answer}")
-
-        machine = MealyMachine(bin(i)[2::], plus_mul_states_dict)
-        print(f"machine ans: {machine.GetAnswer()}")
-
-        print()
-
-    # bigger testing
-    for i in range(0, 10000):
-        machine = MealyMachine(bin(i)[2::], plus_mul_states_dict)
-        assert (bin(i*3)[2::] == machine.GetAnswer())
-
-
-if __name__ == "__main__":
-    NumberMulThree()
