@@ -30,6 +30,9 @@ class MooreMachine:
         """
         Does:
           проверяет, что словарь `self._states_dict` соответствует структуре
+
+        Raises:
+          ValueError: если не соответствует
         """
         for key, value in self._states_dict.items():
             if not isinstance(key, int):
@@ -66,6 +69,16 @@ class MooreMachine:
         return str(int(self._answer))
 
     def _DoState(self, next_0_state: int, next_1_state: int, digit: str = ""):
+        """
+        Means:
+          вспомогательная функция, отвечающая за выполнение действий
+          в состояниях конечного автомата
+
+        Args:
+          next_0_state (int): ключ следующего состояния в словаре, если 0 на входе
+          next_1_state (int): ключ следующего состояния в словаре, если 1 на входе
+          digit (str, optional): цифра, которая добавляется к ответу (defaults to "")
+        """
         make_shift: bool = True
 
         if digit == "":
@@ -76,23 +89,13 @@ class MooreMachine:
             self._number = self._number[0:-1]
 
         try:
-            if self._number[-1] == "0" and self._states_dict.get(next_0_state) != None:
-                if self._states_dict.get(next_0_state)[0] == None or \
-                   self._states_dict.get(next_0_state)[1] == None or \
-                   self._states_dict.get(next_0_state)[2] == None:
-                    raise ValueError("Extra value type in states_dict")
-
+            if self._number[-1] == "0":
                 # выполняем функцию, соотв. "0 на входе"
                 self._DoState(self._states_dict.get(next_0_state)[0],
                               self._states_dict.get(next_0_state)[1],
                               self._states_dict.get(next_0_state)[2])
 
-            elif self._number[-1] == "1" and self._states_dict.get(next_1_state) != None:
-                if self._states_dict.get(next_1_state)[0] == None or \
-                   self._states_dict.get(next_1_state)[1] == None or \
-                   self._states_dict.get(next_1_state)[2] == None:
-                    raise ValueError("Extra value type in states_dict")
-
+            elif self._number[-1] == "1":
                 # выполняем функцию, соотв. "1 на входе"
                 self._DoState(self._states_dict.get(next_1_state)[0],
                               self._states_dict.get(next_1_state)[1],
