@@ -1,10 +1,10 @@
 from typing import Callable
 
 
-class NumberMulThreePlusTwo:
+class NumberMulThreePlusTwoMachine:
     """
     Means: 
-      конечный автомат Мили, который выводит двоичное число, 
+      Конечный автомат Мили, который выводит двоичное число, 
       умноженное на три, сложенное с двойкой (bin: (*11) + 2)
     """
 
@@ -45,7 +45,7 @@ class NumberMulThreePlusTwo:
                  FuncIf1: Callable[[], None], digit_if_1: str):
         """
         Means:
-          вспомогательная функция, отвечающая за выполнение действий 
+          Вспомогательная функция, отвечающая за выполнение действий 
           в состояниях конечного автомата
 
         Args:
@@ -98,23 +98,30 @@ class NumberMulThreePlusTwo:
 
 
 # проверка работоспособности
-if __name__ == "__main__":
+def NumberMulThreePlusTwo() -> None:
+    print("NumberMulThreePlusTwo")
+
+    print()
+
     for i in range(0, 100):
         print(i)
 
         curr_number = bin(i)[2::]
-        print("curr number: " + curr_number)
+        print(f"curr number: {curr_number}")
 
         real_answer: str = bin(i*3+2)[2::]
-        print("real answer: " + real_answer)
+        print(f"real answer: {real_answer}")
 
-        machine = NumberMulThreePlusTwo(bin(i)[2::])
-        print("machine ans: " + machine.GetAnswer())
+        machine = NumberMulThreePlusTwoMachine(bin(i)[2::])
+        print(f"machine ans: {machine.GetAnswer()}")
 
-        print()
         print()
 
     # bigger testing
     for i in range(0, 10000):
-        machine = NumberMulThreePlusTwo(bin(i)[2::])
+        machine = NumberMulThreePlusTwoMachine(bin(i)[2::])
         assert (bin(i*3+2)[2::] == machine.GetAnswer())
+
+
+if __name__ == "__main__":
+    NumberMulThreePlusTwo()
