@@ -1,7 +1,7 @@
 from typing import Callable
 
 
-class NumberMulThree:
+class NumberMulThreeMachine:
     """
     Means: 
       Конечный автомат Мили, который выводит двоичное число, умноженное на три (bin: 11)
@@ -85,7 +85,11 @@ class NumberMulThree:
 
 
 # проверка работоспособности
-if __name__ == "__main__":
+def NumberMulThree() -> None:
+    print("NumberMulThree")
+
+    print()
+
     for i in range(0, 100):
         print(i)
 
@@ -95,12 +99,16 @@ if __name__ == "__main__":
         real_answer: str = bin(i*3)[2::]
         print(f"real answer: {real_answer}")
 
-        machine = NumberMulThree(bin(i)[2::])
+        machine = NumberMulThreeMachine(bin(i)[2::])
         print(f"machine ans: {machine.GetAnswer()}")
 
         print()
 
     # bigger testing
     for i in range(0, 10000):
-        machine = NumberMulThree(bin(i)[2::])
+        machine = NumberMulThreeMachine(bin(i)[2::])
         assert (bin(i*3)[2::] == machine.GetAnswer())
+
+
+if __name__ == "__main__":
+    NumberMulThree()

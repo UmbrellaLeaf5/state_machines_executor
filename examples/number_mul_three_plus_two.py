@@ -1,10 +1,11 @@
 from typing import Callable
 
 
-class NumberPlusThree:
+class NumberMulThreePlusTwoMachine:
     """
     Means: 
-      Конечный автомат Мура, который выводит двоичное число, сложенное с тройкой (bin: 11)
+      Конечный автомат Мили, который выводит двоичное число, 
+      умноженное на три, сложенное с двойкой (bin: (*11) + 2)
     """
 
     _number: str
@@ -40,34 +41,32 @@ class NumberPlusThree:
 
         return str(int(self._answer))
 
-    def _DoState(self, FuncIf0: Callable[[], None],
-                 FuncIf1: Callable[[], None], digit: str = ""):
+    def _DoState(self,  FuncIf0: Callable[[], None], digit_if_0: str,
+                 FuncIf1: Callable[[], None], digit_if_1: str):
         """
         Means:
           Вспомогательная функция, отвечающая за выполнение действий 
           в состояниях конечного автомата
 
         Args:
-            FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
-            FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
-            digit (str, optional): цифра, добавляемая к ответу (defaults to "")
+          FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
+          digit_if_0 (str): цифра, добавляемая к ответу в случае "0 на входе"
+          FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
+          digit_if_1 (str): цифра, добавляемая к ответу в случае "1 на входе"
         """
-
-        make_shift: bool = True
-
-        if digit == "":
-            make_shift = False
-
-        self._answer += digit
-        if (make_shift):
-            self._number = self._number[0:-1]
 
         try:
             if self._number[-1] == "0":
+                self._answer += digit_if_0
+                self._number = self._number[0:-1]
+
                 # выполняем функцию, соотв. "0 на входе"
                 FuncIf0()
 
             elif self._number[-1] == "1":
+                self._answer += digit_if_1
+                self._number = self._number[0:-1]
+
                 # выполняем функцию, соотв. "1 на входе"
                 FuncIf1()
 
@@ -77,41 +76,52 @@ class NumberPlusThree:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState(self._State1, self._State2)
+        self._DoState(self._State1, "0", self._State0, "1")
 
     def _State1(self) -> None:
-        self._DoState(self._State3, self._State4, "1")
+        self._DoState(self._State2, "1", self._State5, "0")
 
     def _State2(self) -> None:
-        self._DoState(self._State4, self._State1, "0")
+        self._DoState(self._State2, "0", self._State3, "1")
 
     def _State3(self) -> None:
-        self._DoState(self._State5, self._State3, "1")
+        self._DoState(self._State2, "1", self._State4, "0")
 
     def _State4(self) -> None:
-        self._DoState(self._State3, self._State4, "0")
+        self._DoState(self._State3, "0", self._State4, "1")
 
     def _State5(self) -> None:
-        self._DoState(self._State5, self._State3, "0")
+        self._DoState(self._State1, "0", self._State6, "1")
+
+    def _State6(self) -> None:
+        self._DoState(self._State3, "0", self._State6, "1")
 
 
 # проверка работоспособности
-if __name__ == "__main__":
+def NumberMulThreePlusTwo() -> None:
+    print("NumberMulThreePlusTwo")
+
+    print()
+
     for i in range(0, 100):
         print(i)
 
         curr_number = bin(i)[2::]
         print(f"curr number: {curr_number}")
 
-        real_answer: str = bin(i+3)[2::]
+        real_answer: str = bin(i*3+2)[2::]
         print(f"real answer: {real_answer}")
 
-        machine = NumberPlusThree(bin(i)[2::])
+        machine = NumberMulThreePlusTwoMachine(bin(i)[2::])
         print(f"machine ans: {machine.GetAnswer()}")
 
         print()
 
     # bigger testing
     for i in range(0, 10000):
-        machine = NumberPlusThree(bin(i)[2::])
-        assert (bin(i+3)[2::] == machine.GetAnswer())
+        machine = NumberMulThreePlusTwoMachine(bin(i)[2::])
+        assert (bin(i*3+2)[2::] == machine.GetAnswer())
+
+
+if __name__ == "__main__":
+    NumberMulThreePlusTwo()

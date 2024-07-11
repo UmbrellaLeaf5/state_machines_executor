@@ -1,11 +1,11 @@
 from typing import Callable
 
 
-class NumberMulThreePlusTwo:
+class NumberMulThreePlusOneMachine:
     """
-    Means: 
-      Конечный автомат Мили, который выводит двоичное число, 
-      умноженное на три, сложенное с двойкой (bin: (*11) + 2)
+    Means:
+      конечный автомат Мили, который выводит двоичное число,
+      умноженное на три, сложенное с единицей (bin: (*11) + 1)
     """
 
     _number: str
@@ -40,12 +40,14 @@ class NumberMulThreePlusTwo:
         """
 
         return str(int(self._answer))
+        # return self._answer
 
     def _DoState(self,  FuncIf0: Callable[[], None], digit_if_0: str,
-                 FuncIf1: Callable[[], None], digit_if_1: str):
+                 FuncIf1: Callable[[], None], digit_if_1: str,
+                 ):
         """
         Means:
-          Вспомогательная функция, отвечающая за выполнение действий 
+          Вспомогательная функция, отвечающая за выполнение действий
           в состояниях конечного автомата
 
         Args:
@@ -76,44 +78,52 @@ class NumberMulThreePlusTwo:
     # состояния:
 
     def _State0(self) -> None:
-        self._DoState(self._State1, "0", self._State0, "1")
+        self._DoState(self._State1, "1", self._State4, "0")
 
     def _State1(self) -> None:
-        self._DoState(self._State2, "1", self._State5, "0")
+        self._DoState(self._State1, "0", self._State2, "1")
 
     def _State2(self) -> None:
-        self._DoState(self._State2, "0", self._State3, "1")
+        self._DoState(self._State1, "1", self._State3, "0")
 
     def _State3(self) -> None:
-        self._DoState(self._State2, "1", self._State4, "0")
+        self._DoState(self._State2, "0", self._State3, "1")
 
     def _State4(self) -> None:
-        self._DoState(self._State3, "0", self._State4, "1")
+        self._DoState(self._State5, "0", self._State6, "1")
 
     def _State5(self) -> None:
-        self._DoState(self._State1, "0", self._State6, "1")
+        self._DoState(self._State1, "1", self._State4, "0")
 
     def _State6(self) -> None:
-        self._DoState(self._State3, "0", self._State6, "1")
+        self._DoState(self._State2, "0", self._State6, "1")
 
 
 # проверка работоспособности
-if __name__ == "__main__":
+def NumberMulThreePlusOne() -> None:
+    print("NumberMulThreePlusOne")
+
+    print()
+
     for i in range(0, 100):
         print(i)
 
         curr_number = bin(i)[2::]
         print(f"curr number: {curr_number}")
 
-        real_answer: str = bin(i*3+2)[2::]
+        real_answer: str = bin(i*3+1)[2::]
         print(f"real answer: {real_answer}")
 
-        machine = NumberMulThreePlusTwo(bin(i)[2::])
+        machine = NumberMulThreePlusOneMachine(bin(i)[2::])
         print(f"machine ans: {machine.GetAnswer()}")
 
         print()
 
     # bigger testing
     for i in range(0, 10000):
-        machine = NumberMulThreePlusTwo(bin(i)[2::])
-        assert (bin(i*3+2)[2::] == machine.GetAnswer())
+        machine = NumberMulThreePlusOneMachine(bin(i)[2::])
+        assert (bin(i*3+1)[2::] == machine.GetAnswer())
+
+
+if __name__ == "__main__":
+    NumberMulThreePlusOne()
