@@ -2,24 +2,36 @@ from typing import Callable
 
 
 class MooreMachine:
-
     _number: str
     _answer: str = ""
-    _states_dict: dict
-    _states_refs: list = []
+    _states_dict: dict[str, list[str]]
 
-    def __init__(self, number: str, states_dict: dict, should_start=True):
-        self._number = number
+    def __init__(self, number: str, states_dict: dict,
+                 add_zeros: bool = True, zeros_amount: int = 4, should_start=True) -> None:
+        """
+        Args:
+          number (str): двоичное число, по которому будет проходиться конечный автомат
+          add_zeros (bool, optional): факт необходимости незначащих доп. нулей (defaults to True)
+          zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
+        """
+
         self._states_dict = states_dict
 
-        self._InitStates()
+        self._number = "0"*(zeros_amount)*add_zeros + number
 
-        # if (should_start):
-        self.Start()
+        if (should_start):
+            self.Start()
 
-    def Start(self):
-        print(self._states_refs)
-        self._states_refs[0]
+    def Start(self) -> None:
+        """
+        Does:
+          запускает алгоритм конечного автомата
+        """
+
+        if self._states_dict.get("0") != None:
+            self._DoState(self._states_dict.get("0")[0],
+                          self._states_dict.get("0")[1],
+                          self._states_dict.get("0")[2])
 
     def GetAnswer(self) -> str:
         """
@@ -29,35 +41,7 @@ class MooreMachine:
 
         return str(int(self._answer))
 
-    def _InitStates(self):
-        states_defs: list[str] = []
-        for state_key, state_value in self._states_dict.items():
-            state_dict: dict = state_value
-            state_definition = f"def _State{state_key[-1]}(self):\n \
-                   self._DoState( \
-                            self._{state_dict['FuncIf0']}, \
-                            self._{state_dict['FuncIf1']}, \
-                            {state_dict['digit']})"
-
-            states_defs.append(state_definition)
-
-        for i in range(len(states_defs)):
-            exec(states_defs[i])
-            self._states_refs.append(eval(f"_State{i}"))
-
-    def _DoState(self, FuncIf0: Callable[[], None],
-                 FuncIf1: Callable[[], None], digit: str = ""):
-        """
-        Means:
-          вспомогательная функция, отвечающая за выполнение действий 
-          в состояниях конечного автомата
-
-        Args:
-            FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
-            FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
-            digit (str, optional): цифра, добавляемая к ответу (defaults to "")
-        """
-
+    def _DoState(self, next_0_state: str, next_1_state: str, digit: str = ""):
         make_shift: bool = True
 
         if digit == "":
@@ -68,34 +52,46 @@ class MooreMachine:
             self._number = self._number[0:-1]
 
         try:
-            if self._number[-1] == "0":
+            if self._number[-1] == "0" and self._states_dict.get(next_0_state) != None:
                 # выполняем функцию, соотв. "0 на входе"
-                FuncIf0()
+                self._DoState(self._states_dict.get(next_0_state)[0],
+                              self._states_dict.get(next_0_state)[1],
+                              self._states_dict.get(next_0_state)[2])
 
-            elif self._number[-1] == "1":
+            elif self._number[-1] == "1" and self._states_dict.get(next_1_state) != None:
                 # выполняем функцию, соотв. "1 на входе"
-                FuncIf1()
+                self._DoState(self._states_dict.get(next_1_state)[0],
+                              self._states_dict.get(next_1_state)[1],
+                              self._states_dict.get(next_1_state)[2])
 
         except IndexError:
             self._answer = "".join(reversed(self._answer))
 
 
+# проверка работоспособности
 if __name__ == "__main__":
-    state0_dict: dict = {'digit': "",
-                         'FuncIf0': "State2",
-                         'FuncIf1': "State1"}
+    states_dict: dict[str, list[str]] = {"0": ["1", "2", ""],
+                                         "1": ["3", "4", "1"],
+                                         "2": ["4", "1", "0"],
+                                         "3": ["5", "3", "1"],
+                                         "4": ["3", "4", "0"],
+                                         "5": ["5", "3", "0"]}
+    for i in range(0, 100):
+        print(i)
 
-    state1_dict: dict = {'digit': "0",
-                         'FuncIf0': "State2",
-                         'FuncIf1': "State1"}
+        curr_number = bin(i)[2::]
+        print(f"curr number: {curr_number}")
 
-    state2_dict: dict = {'digit': "1",
-                         'FuncIf0': "State2",
-                         'FuncIf1': "State1"}
+        real_answer: str = bin(i+3)[2::]
+        print(f"real answer: {real_answer}")
 
-    states_dict: dict = {'State0': state0_dict,
-                         'State1': state1_dict,
-                         'State2': state2_dict}
+        machine = MooreMachine(bin(i)[2::], states_dict)
+        print(f"machine ans: {machine.GetAnswer()}")
 
-    machine = MooreMachine("100", states_dict)
-    # print(machine.GetAnswer())
+        print()
+        print()
+
+    # bigger testing
+    # for i in range(0, 10000):
+    #     machine = MooreMachine(bin(i)[2::], states_dict)
+    #     assert (bin(i+3)[2::] == machine.GetAnswer())
