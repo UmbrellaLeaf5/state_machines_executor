@@ -5,23 +5,46 @@ class MooreMachine:
     """
     _number: str
     _answer: str = ""
-    _states_dict: dict[str, list[str]]
+    _states_dict: dict[int, list[int | int | str]]
 
-    def __init__(self, number: str, states_dict: dict[str, list[str]],
+    def __init__(self, number: str, states_dict: dict[int, list[int | int | str]],
                  add_zeros: bool = True, zeros_amount: int = 4, should_start=True) -> None:
         """
         Args:
           number (str): двоичное число, по которому будет проходиться конечный автомат
+          states_dict (dict[int, list[int | int | str]]): _description_
           add_zeros (bool, optional): факт необходимости незначащих доп. нулей (defaults to True)
           zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
+          should_start (bool, optional): _description_. Defaults to True.
         """
 
         self._states_dict = states_dict
+        self._Check_States_Dict()
 
         self._number = "0"*(zeros_amount)*add_zeros + number
 
         if (should_start):
             self.Start()
+
+    def _Check_States_Dict(self) -> None:
+        """
+        Does:
+          проверяет, что словарь `self._states_dict` соответствует структуре
+        """
+        for key, value in self._states_dict.items():
+            if not isinstance(key, int):
+                raise ValueError("states_dict: Not all keys are ints")
+
+            if not isinstance(value, list) or len(value) != 3:
+                raise ValueError("states_dict: Not all states are lists of 3")
+
+            for item in value:
+                if not isinstance(item, (int, str)):
+                    raise ValueError("states_dict: Extra value type in states")
+
+                if isinstance(item, str) and not (item == "1" or item == "0"):
+                    if key != 0 and item != "":
+                        raise ValueError("states_dict: the value of state is not binary")
 
     def Start(self) -> None:
         """
@@ -29,10 +52,10 @@ class MooreMachine:
           запускает алгоритм конечного автомата
         """
 
-        if self._states_dict.get("0") != None:
-            self._DoState(self._states_dict.get("0")[0],
-                          self._states_dict.get("0")[1],
-                          self._states_dict.get("0")[2])
+        if self._states_dict.get(0) != None:
+            self._DoState(self._states_dict.get(0)[0],
+                          self._states_dict.get(0)[1],
+                          self._states_dict.get(0)[2])
 
     def GetAnswer(self) -> str:
         """
@@ -42,7 +65,7 @@ class MooreMachine:
 
         return str(int(self._answer))
 
-    def _DoState(self, next_0_state: str, next_1_state: str, digit: str = ""):
+    def _DoState(self, next_0_state: int, next_1_state: int, digit: str = ""):
         make_shift: bool = True
 
         if digit == "":
@@ -69,6 +92,7 @@ class MooreMachine:
                    self._states_dict.get(next_1_state)[1] == None or \
                    self._states_dict.get(next_1_state)[2] == None:
                     raise ValueError("Extra value type in states_dict")
+
                 # выполняем функцию, соотв. "1 на входе"
                 self._DoState(self._states_dict.get(next_1_state)[0],
                               self._states_dict.get(next_1_state)[1],
@@ -80,12 +104,12 @@ class MooreMachine:
 
 # проверка работоспособности
 if __name__ == "__main__":
-    states_dict: dict[str, list[str]] = {"0": ["1", "2", ""],
-                                         "1": ["3", "4", "1"],
-                                         "2": ["4", "1", "0"],
-                                         "3": ["5", "3", "1"],
-                                         "4": ["3", "4", "0"],
-                                         "5": ["5", "3", "0"]}
+    states_dict: dict[int, list[int | int | str]] = {0: [1, 2, ""],
+                                                     1: [3, 4, "1"],
+                                                     2: [4, 1, "0"],
+                                                     3: [5, 3, "1"],
+                                                     4: [3, 4, "0"],
+                                                     5: [5, 3, "0"]}
     for i in range(0, 100):
         print(i)
 
