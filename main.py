@@ -25,13 +25,16 @@ def button2_callback():
 dpg.create_context()
 dpg.create_viewport(title="State Machines Executor", width=800, height=600)
 
-with dpg.window(label="Main Window", tag="main_window", width=800, height=600):
-  with dpg.child_window(tag="child_window", width=-1, height=-1):
-    dpg.add_button(label="Button 1", callback=button1_callback)
-    dpg.add_button(label="Button 2", callback=button2_callback)
-    dpg.add_text("", tag="output_text")
+with dpg.window(
+  label="State Machines Executor", tag="main_window", width=800, height=600
+):
+  dpg.add_button(label="Button 1", callback=button1_callback)
+  dpg.add_button(label="Button 2", callback=button2_callback)
+  dpg.add_text("", tag="output_text")
+
 
 dpg.setup_dearpygui()
 dpg.show_viewport()
+dpg.set_primary_window("main_window", True)
 dpg.start_dearpygui()
 dpg.destroy_context()
