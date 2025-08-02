@@ -1,129 +1,134 @@
-from typing import Callable
+from collections.abc import Callable
 
 
 class NumberMulThreePlusOneMachine:
+  """
+  Means:
+    конечный автомат Мили, который выводит двоичное число,
+    умноженное на три, сложенное с единицей (bin: (*11) + 1)
+  """
+
+  _number: str
+  _answer: str = ""
+
+  def __init__(
+    self, number: str, add_zeros: bool = True, zeros_amount: int = 4, should_start=True
+  ) -> None:
+    """
+    Args:
+      number (str): двоичное число, по которому будет проходиться конечный автомат
+      add_zeros (bool, optional):
+        факт необходимости незначащих доп. нулей (defaults to True)
+      zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
+    """
+
+    self._number = "0" * (zeros_amount) * add_zeros + number
+
+    if should_start:
+      self.Start()
+
+  def Start(self) -> None:
+    """
+    Does:
+      запускает алгоритм конечного автомата
+    """
+
+    self._State0()
+
+  def GetAnswer(self) -> str:
+    """
+    Returns:
+      str: вывод конечного автомата
+    """
+
+    return str(int(self._answer))
+
+  def _DoState(
+    self,
+    FuncIf0: Callable[[], None],
+    digit_if_0: str,
+    FuncIf1: Callable[[], None],
+    digit_if_1: str,
+  ):
     """
     Means:
-      конечный автомат Мили, который выводит двоичное число,
-      умноженное на три, сложенное с единицей (bin: (*11) + 1)
+      Вспомогательная функция, отвечающая за выполнение действий
+      в состояниях конечного автомата
+
+    Args:
+      FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
+      digit_if_0 (str): цифра, добавляемая к ответу в случае "0 на входе"
+      FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
+      digit_if_1 (str): цифра, добавляемая к ответу в случае "1 на входе"
     """
 
-    _number: str
-    _answer: str = ""
+    try:
+      if self._number[-1] == "0":
+        self._answer += digit_if_0
+        self._number = self._number[0:-1]
 
-    def __init__(self, number: str,
-                 add_zeros: bool = True, zeros_amount: int = 4, should_start=True) -> None:
-        """
-        Args:
-          number (str): двоичное число, по которому будет проходиться конечный автомат
-          add_zeros (bool, optional): факт необходимости незначащих доп. нулей (defaults to True)
-          zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
-        """
+        # выполняем функцию, соотв. "0 на входе"
+        FuncIf0()
 
-        self._number = "0"*(zeros_amount)*add_zeros + number
+      elif self._number[-1] == "1":
+        self._answer += digit_if_1
+        self._number = self._number[0:-1]
 
-        if (should_start):
-            self.Start()
+        # выполняем функцию, соотв. "1 на входе"
+        FuncIf1()
 
-    def Start(self) -> None:
-        """
-        Does:
-          запускает алгоритм конечного автомата
-        """
+    except IndexError:
+      self._answer = "".join(reversed(self._answer))
 
-        self._State0()
+  # состояния:
 
-    def GetAnswer(self) -> str:
-        """
-        Returns:
-          str: вывод конечного автомата
-        """
+  def _State0(self) -> None:
+    self._DoState(self._State1, "1", self._State4, "0")
 
-        return str(int(self._answer))
-        # return self._answer
+  def _State1(self) -> None:
+    self._DoState(self._State1, "0", self._State2, "1")
 
-    def _DoState(self,  FuncIf0: Callable[[], None], digit_if_0: str,
-                 FuncIf1: Callable[[], None], digit_if_1: str,
-                 ):
-        """
-        Means:
-          Вспомогательная функция, отвечающая за выполнение действий
-          в состояниях конечного автомата
+  def _State2(self) -> None:
+    self._DoState(self._State1, "1", self._State3, "0")
 
-        Args:
-          FuncIf0 (Callable[[], None]): функция, выполняемая в случае "0 на входе"
-          digit_if_0 (str): цифра, добавляемая к ответу в случае "0 на входе"
-          FuncIf1 (Callable[[], None]): функция, выполняемая в случае "1 на входе"
-          digit_if_1 (str): цифра, добавляемая к ответу в случае "1 на входе"
-        """
+  def _State3(self) -> None:
+    self._DoState(self._State2, "0", self._State3, "1")
 
-        try:
-            if self._number[-1] == "0":
-                self._answer += digit_if_0
-                self._number = self._number[0:-1]
+  def _State4(self) -> None:
+    self._DoState(self._State5, "0", self._State6, "1")
 
-                # выполняем функцию, соотв. "0 на входе"
-                FuncIf0()
+  def _State5(self) -> None:
+    self._DoState(self._State1, "1", self._State4, "0")
 
-            elif self._number[-1] == "1":
-                self._answer += digit_if_1
-                self._number = self._number[0:-1]
-
-                # выполняем функцию, соотв. "1 на входе"
-                FuncIf1()
-
-        except IndexError:
-            self._answer = "".join(reversed(self._answer))
-
-    # состояния:
-
-    def _State0(self) -> None:
-        self._DoState(self._State1, "1", self._State4, "0")
-
-    def _State1(self) -> None:
-        self._DoState(self._State1, "0", self._State2, "1")
-
-    def _State2(self) -> None:
-        self._DoState(self._State1, "1", self._State3, "0")
-
-    def _State3(self) -> None:
-        self._DoState(self._State2, "0", self._State3, "1")
-
-    def _State4(self) -> None:
-        self._DoState(self._State5, "0", self._State6, "1")
-
-    def _State5(self) -> None:
-        self._DoState(self._State1, "1", self._State4, "0")
-
-    def _State6(self) -> None:
-        self._DoState(self._State2, "0", self._State6, "1")
+  def _State6(self) -> None:
+    self._DoState(self._State2, "0", self._State6, "1")
 
 
 # проверка работоспособности
 def NumberMulThreePlusOne() -> None:
-    print("NumberMulThreePlusOne")
+  print("NumberMulThreePlusOne")
+
+  print()
+
+  for i in range(0, 100):
+    print(i)
+
+    curr_number = bin(i)[2::]
+    print(f"curr number: {curr_number}")
+
+    real_answer: str = bin(i * 3 + 1)[2::]
+    print(f"real answer: {real_answer}")
+
+    machine = NumberMulThreePlusOneMachine(bin(i)[2::])
+    print(f"machine ans: {machine.GetAnswer()}")
 
     print()
 
-    for i in range(0, 100):
-        print(i)
-
-        curr_number = bin(i)[2::]
-        print(f"curr number: {curr_number}")
-
-        real_answer: str = bin(i*3+1)[2::]
-        print(f"real answer: {real_answer}")
-
-        machine = NumberMulThreePlusOneMachine(bin(i)[2::])
-        print(f"machine ans: {machine.GetAnswer()}")
-
-        print()
-
-    # bigger testing
-    for i in range(0, 10000):
-        machine = NumberMulThreePlusOneMachine(bin(i)[2::])
-        assert (bin(i*3+1)[2::] == machine.GetAnswer())
+  # bigger testing
+  for i in range(0, 10000):
+    machine = NumberMulThreePlusOneMachine(bin(i)[2::])
+    assert bin(i * 3 + 1)[2::] == machine.GetAnswer()
 
 
 if __name__ == "__main__":
-    NumberMulThreePlusOne()
+  NumberMulThreePlusOne()
