@@ -23,7 +23,7 @@ def button2_callback():
 
 
 dpg.create_context()
-dpg.create_viewport(title="DearPyGui Demo", width=800, height=600)
+dpg.create_viewport(title="State Machines Executor", width=800, height=600)
 
 with dpg.window(label="Main Window", tag="main_window", width=800, height=600):
   with dpg.child_window(tag="child_window", width=-1, height=-1):
