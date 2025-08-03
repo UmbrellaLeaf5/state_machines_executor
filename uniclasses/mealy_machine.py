@@ -46,7 +46,7 @@ class MealyMachine:
     dict[_State.BinaryDigit, tuple[_State.NameType, _State.BinaryDigit]],
   ]
 
-  _number: str
+  _number: str = ""
   _answer: str = ""
   _states: dict[_State.NameType, _State] = {}
   _initial_state: _State.NameType
@@ -73,9 +73,12 @@ class MealyMachine:
     """
 
     self._initial_state = initial_state
+
+    self._states = {}
     self._InitStates(states_dict)
 
     self._number = number.zfill(len(number) + zeros_amount * add_zeros)
+    self._answer: str = ""
 
     if should_start:
       self.Start()
