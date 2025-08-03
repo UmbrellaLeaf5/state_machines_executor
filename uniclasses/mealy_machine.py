@@ -1,5 +1,4 @@
-import typing
-from dataclasses import dataclass
+from uniclasses.state import BinaryDigit, MealyState, StateNameType
 
 
 class MealyMachine:
@@ -24,38 +23,21 @@ class MealyMachine:
     ```
   """
 
-  @dataclass
-  class _State:
-    BinaryDigit = typing.Literal[0, 1]
-    NameType = str | int
-
-    state_if_0: NameType
-    state_if_1: NameType
-
-    digit_if_0: BinaryDigit
-    digit_if_1: BinaryDigit
-
-    def DigitIf(self, digit: BinaryDigit) -> BinaryDigit:
-      return self.digit_if_0 if digit == 0 else self.digit_if_1
-
-    def StateIf(self, digit: BinaryDigit) -> NameType:
-      return self.state_if_0 if digit == 0 else self.state_if_1
-
   Dict = dict[
-    _State.NameType,
-    dict[_State.BinaryDigit, tuple[_State.NameType, _State.BinaryDigit]],
+    StateNameType,
+    dict[BinaryDigit, tuple[StateNameType, BinaryDigit]],
   ]
 
   _number: str = ""
   _answer: str = ""
-  _states: dict[_State.NameType, _State] = {}
-  _initial_state: _State.NameType
+  _states: dict[StateNameType, MealyState] = {}
+  _initial_state: StateNameType
 
   def __init__(
     self,
     number: str,
     states_dict: Dict,
-    initial_state: _State.NameType,
+    initial_state: StateNameType,
     add_zeros: bool = True,
     zeros_amount: int = 4,
     should_start: bool = True,
@@ -97,10 +79,10 @@ class MealyMachine:
       Запускает алгоритм конечного автомата.
     """
 
-    state_literal = self._initial_state
+    state_name = self._initial_state
 
     while self._number:
-      state = self._states[state_literal]
+      state = self._states[state_name]
 
       last_digit = int(self._number[-1])
       self._number = self._number[:-1]
@@ -108,7 +90,7 @@ class MealyMachine:
       # TODO: добавить логику с остановкой автомата в конкретном состоянии
 
       self._answer += str(state.DigitIf(last_digit))  # type: ignore
-      state_literal = state.StateIf(last_digit)  # type: ignore
+      state_name = state.StateIf(last_digit)  # type: ignore
 
     self._answer = str(int("".join(reversed(self._answer))))
 
@@ -126,8 +108,20 @@ class MealyMachine:
       ```
 
     Raises:
-      ValueError: если не соответствует.
+      ValueError | KeyError: если не соответствует.
     """
+
+    if not isinstance(states_dict, dict):
+      raise ValueError(
+        "MealyMachine (in states_dict):\n"
+        "Invalid states_dict type: "
+        f"expected MealyMachine.Dict, but got {type(states_dict)}"
+      )
+
+    if not states_dict:  # empty
+      raise ValueError(
+        "MealyMachine (in states_dict):\nInvalid states_dict: expected non-empty dict"
+      )
 
     if self._initial_state not in states_dict.keys():
       raise KeyError(
@@ -137,46 +131,77 @@ class MealyMachine:
       )
 
     for state_name, state_dict in states_dict.items():
-      # MARK: Validation
-
-      if not isinstance(state_name, MealyMachine._State.NameType):
+      if not isinstance(state_name, StateNameType):
         raise KeyError(
           "MealyMachine (in states_dict):\n"
           f"Invalid state name '{state_name}': "
-          f"expected str or int, got {type(state_name)}"
+          f"expected str or int, but got {type(state_name)}"
+        )
+
+      if not isinstance(state_dict, dict):
+        raise ValueError(
+          "MealyMachine (in states_dict):\n"
+          f"Invalid transitions type in state '{state_name}': "
+          f"expected dict, but got {type(state_dict)}"
         )
 
       if set(state_dict.keys()) != {0, 1}:
         raise KeyError(
           "MealyMachine (in states_dict):\n"
           f"Invalid transitions in state '{state_name}': "
-          f"expected keys {{0, 1}}, but got {list(state_dict.keys())}"
+          f"expected keys 0 and 1, but got {list(state_dict.keys())}"
         )
 
-      for input_digit, (next_state, output_digit) in state_dict.items():
-        if not isinstance(next_state, MealyMachine._State.NameType):
+      for input_digit, output_tuple in state_dict.items():
+        if not isinstance(output_tuple, tuple):
           raise ValueError(
             "MealyMachine (in states_dict):\n"
-            f"Invalid next state in transition {input_digit} -> {next_state}: "
-            f"expected str or int, got {type(next_state)}"
+            f"Invalid output_tuple type in state '{state_name}' in transition "
+            f"'{state_name}' --({input_digit}, ...)--> ...: "
+            f"expected tuple, but got {type(output_tuple)}"
           )
 
-        if output_digit not in {1, 0}:
+        if len(output_tuple) != 2:  # noqa: PLR2004
+          raise ValueError(
+            "MealyMachine (in states_dict):\n"
+            f"Invalid output_tuple length in state '{state_name}' in transition: "
+            f"'{state_name}' --({input_digit}, ...)--> ...: "
+            f"expected (next_state, output_digit), but got {output_tuple}"
+          )
+
+        next_state, output_digit = output_tuple
+
+        if not isinstance(next_state, StateNameType):
+          raise ValueError(
+            "MealyMachine (in states_dict):\n"
+            f"Invalid next_state name in transition "
+            f"'{state_name}' --({input_digit}, ...)--> '{next_state}': "
+            f"expected str or int, but got {type(next_state)}"
+          )
+
+        if next_state not in states_dict.keys():
+          raise ValueError(
+            "MealyMachine (in states_dict):\n"
+            f"Invalid next_state in transition "
+            f"'{state_name}' --({input_digit}, ...)--> '{next_state}': "
+            f"state '{next_state}' is not defined states_dict. "
+            f"Available states: {list(states_dict.keys())}"
+          )
+
+        if output_digit not in {0, 1}:
           raise ValueError(
             "MealyMachine (in states_dict):\n"
             "Invalid output digit in transition "
-            f"{state_name} --{input_digit}--> {next_state}: "
-            f"expected 0 or 1, got {output_digit}"
+            f"'{state_name}' --({input_digit}, {output_digit})--> '{next_state}': "
+            f"expected 0 or 1, but got {output_digit}"
           )
-
-      # MARK: ~Validation
 
       self._states.setdefault(
         state_name,
-        MealyMachine._State(
+        MealyState(
           state_dict[0][0],  # next_state if input=0
           state_dict[1][0],  # next_state if input=1
-          state_dict[0][1],  # type: ignore; output if input=0
-          state_dict[1][1],  # type: ignore; output if input=1
+          state_dict[0][1],  # output if input=0
+          state_dict[1][1],  # output if input=1
         ),
       )

@@ -50,11 +50,11 @@ def test_invalid_state_name_type():
   """Проверка, что невалидное имя состояния вызывает исключение."""
 
   invalid_dict: MealyMachine.Dict = {
-    123: {0: ("S_0", 0), 1: ("S_1", 1)},  # int - допустимо
-    ("S_1",): {0: ("S_0", 1), 1: ("S_2", 0)},  # кортеж - недопустимо
+    123: {0: (("S_1",), 0), 1: (123, 1)},  # int - допустимо
+    ("S_1",): {0: (("S_1",), 1), 1: (("S_1",), 0)},  # кортеж - недопустимо
   }
 
-  with pytest.raises(KeyError) as exc_info:
+  with pytest.raises(ValueError) as exc_info:
     MealyMachine(
       number="101",
       states_dict=invalid_dict,
@@ -63,18 +63,56 @@ def test_invalid_state_name_type():
     )
 
   assert "MealyMachine (in states_dict):" in str(exc_info.value)
-  assert "Invalid state name" in str(exc_info.value)
-  assert "expected str or int, got" in str(exc_info.value)
+  assert "Invalid next_state name" in str(exc_info.value)
+  assert "expected str or int, but got" in str(exc_info.value)
+
+
+def test_empty_transition_keys():
+  invalid_dict: MealyMachine.Dict = {"S_0": {}}  # нет ключей
+
+  with pytest.raises(KeyError) as exc_info:
+    MealyMachine(
+      number="101",
+      states_dict=invalid_dict,
+      initial_state="S_0",
+      should_start=False,
+    )
+
+  assert "MealyMachine (in states_dict):" in str(exc_info.value)
+  assert "Invalid transitions in state" in str(exc_info.value)
+  assert "expected keys 0 and 1, but got []" in str(exc_info.value)
+
+
+def test_extra_transition_keys():
+  invalid_dict: MealyMachine.Dict = {
+    "S_0": {
+      0: ("S_0", 0),
+      1: ("S_0", 1),
+      2: ("S_0", 0),
+    }
+  }
+
+  # лишний ключ
+
+  with pytest.raises(KeyError) as exc_info:
+    MealyMachine(
+      number="101",
+      states_dict=invalid_dict,
+      initial_state="S_0",
+      should_start=False,
+    )
+
+  assert "MealyMachine (in states_dict):" in str(exc_info.value)
+  assert "Invalid transitions in state" in str(exc_info.value)
+  assert "expected keys 0 and 1, but got [0, 1, 2]" in str(exc_info.value)
 
 
 def test_invalid_transition_keys():
   """Проверка, что отсутствие ключей 0 и 1 вызывает исключение."""
 
   invalid_dicts: list[MealyMachine.Dict] = [
-    {"S_0": {}},  # нет ключей
     {"S_0": {0: ("S_0", 0)}},  # нет ключа 1
     {"S_0": {1: ("S_1", 1)}},  # нет ключа 0
-    {"S_0": {0: ("S_0", 0), 1: ("S_1", 1), 2: ("S_2", 0)}},  # лишний ключ
   ]
 
   for invalid_dict in invalid_dicts:
@@ -88,7 +126,7 @@ def test_invalid_transition_keys():
 
     assert "MealyMachine (in states_dict):" in str(exc_info.value)
     assert "Invalid transitions in state" in str(exc_info.value)
-    assert "expected keys {0, 1}, but got" in str(exc_info.value)
+    assert "expected keys 0 and 1, but got" in str(exc_info.value)
 
 
 def test_invalid_next_state_type():
@@ -97,6 +135,7 @@ def test_invalid_next_state_type():
   invalid_dict: MealyMachine.Dict = {
     "S_0": {0: ("S_0", 0), 1: (123, 1)},  # int - допустимо
     "S_1": {0: ("S_0", 1), 1: (None, 0)},  # None - недопустимо
+    123: {0: ("S_0", 1), 1: ("S_0", 0)},  # None - недопустимо
   }
 
   with pytest.raises(ValueError) as exc_info:
@@ -108,18 +147,17 @@ def test_invalid_next_state_type():
     )
 
   assert "MealyMachine (in states_dict):" in str(exc_info.value)
-  assert "Invalid next state in transition" in str(exc_info.value)
-  assert "->" in str(exc_info.value)
-  assert "expected str or int, got" in str(exc_info.value)
+  assert "Invalid next_state name in transition" in str(exc_info.value)
+  assert "expected str or int, but got" in str(exc_info.value)
 
 
 def test_invalid_output_digit():
   """Проверка, что невалидный output_digit вызывает исключение."""
 
   invalid_dicts: list[MealyMachine.Dict] = [
-    {"S_0": {0: ("S_0", 2), 1: ("S_1", 1)}},  # 2 - недопустимо
-    {"S_0": {0: ("S_0", 0), 1: ("S_1", -1)}},  # -1 - недопустимо
-    {"S_0": {0: ("S_0", "0"), 1: ("S_1", 1)}},  # строка - недопустимо
+    {"S_0": {0: ("S_0", 2), 1: ("S_0", 1)}},  # 2 - недопустимо
+    {"S_0": {0: ("S_0", 0), 1: ("S_0", -1)}},  # -1 - недопустимо
+    {"S_0": {0: ("S_0", "0"), 1: ("S_0", 1)}},  # строка - недопустимо
   ]
 
   for invalid_dict in invalid_dicts:
@@ -133,4 +171,4 @@ def test_invalid_output_digit():
 
     assert "MealyMachine (in states_dict):" in str(exc_info.value)
     assert "Invalid output digit in transition" in str(exc_info.value)
-    assert "expected 0 or 1, got" in str(exc_info.value)
+    assert "expected 0 or 1, but got" in str(exc_info.value)
