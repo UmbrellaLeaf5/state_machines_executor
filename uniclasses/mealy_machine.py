@@ -5,15 +5,29 @@ from dataclasses import dataclass
 class MealyMachine:
   """
   Means:
-    Шаблон класса конечного автомата Мили
+    Шаблон класса конечного автомата Мили для обработки двоичных чисел.
+    Пример использования:
+    ```python
+      machine = MealyMachine(
+        number="101",
+        states_dict={
+          "S_0": {0: ("S_0", 0), 1: ("S_1", 1)},
+          "S_1": {0: ("S_0", 1), 1: ("S_1", 0)},
+        },
+        initial_state="S_0",
+        add_zeros=True,
+        zeros_amount=3,
+        should_start=True,
+      )
+
+      print(machine.GetAnswer())
+    ```
   """
 
   @dataclass
   class _State:
     BinaryDigit = typing.Literal[0, 1]
     NameType = str | int
-
-    name: NameType
 
     state_if_0: NameType
     state_if_1: NameType
@@ -29,7 +43,7 @@ class MealyMachine:
 
   Dict = dict[
     _State.NameType,
-    dict[_State.BinaryDigit, list[_State.NameType | _State.BinaryDigit]],
+    dict[_State.BinaryDigit, tuple[_State.NameType, _State.BinaryDigit]],
   ]
 
   _number: str
@@ -48,14 +62,14 @@ class MealyMachine:
   ) -> None:
     """
     Args:
-      number (str): двоичное число, по которому будет проходиться конечный автомат
-      states_dict (MealyMachineDict): словарь состояний
-      initial_state (str | int): начальное состояние
-      add_zeros (bool, optional):
-        факт необходимости незначащих доп. нулей (defaults to True)
-      zeros_amount (int, optional): кол-во незначащих доп. нулей (defaults to 4)
-      should_start (bool, optional):
-        факт необходимости начала работы автомата (defaults to True)
+        number (str): двоичное число, по которому будет проходиться конечный автомат.
+        states_dict (MealyMachine.Dict): словарь состояний.
+        initial_state (str | int): начальное состояние.
+        add_zeros (bool, optional): факт необходимости незначащих доп. нулей.
+          Defaults to True.
+        zeros_amount (int, optional): кол-во незначащих доп. нулей. Defaults to 4.
+        should_start (bool, optional): факт необходимости начала работы автомата.
+          Defaults to True.
     """
 
     self._initial_state = initial_state
@@ -66,37 +80,29 @@ class MealyMachine:
     if should_start:
       self.Start()
 
-  def Start(self) -> None:
-    """
-    Does:
-      запускает алгоритм конечного автомата
-    """
-
-    self._DoState(self._initial_state)
-
   def GetAnswer(self) -> str:
     """
     Returns:
-      str: вывод конечного автомата
+      str: вывод конечного автомата.
     """
 
-    return str(int(self._answer))
+    return self._answer
 
-  def _DoState(self, state_literal: _State.NameType):
+  def Start(self):
     """
-    Means:
-      Вспомогательная функция, отвечающая за выполнение действий
-      в состояниях конечного автомата
+    Does:
+      Запускает алгоритм конечного автомата.
+    """
 
-    Args:
-      state_literal (str | int): номер (название) состояния
-    """
+    state_literal = self._initial_state
 
     while self._number:
       state = self._states[state_literal]
 
       last_digit = int(self._number[-1])
       self._number = self._number[:-1]
+
+      # TODO: добавить логику с остановкой автомата в конкретном состоянии
 
       self._answer += str(state.DigitIf(last_digit))  # type: ignore
       state_literal = state.StateIf(last_digit)  # type: ignore
@@ -107,68 +113,67 @@ class MealyMachine:
     """
     Does:
       Заполняет `self._states` и проверяет,
-      что словарь `self._states_dict` соответствует структуре `MealyMachineDict`:
+      что словарь `states_dict` соответствует структуре `MealyMachine.Dict`:
       ```python
-        example: MealyMachineDict = {
-          "S_0": {0: ["S_0", 1], 1: ["S_1", 1]},
-          "S_1": {0: ["S_1", 1], 1: ["S_1", 1]},
-          "S_2": {0: ["S_1", 1], 1: ["S_1", 1]},
+        example: MealyMachine.Dict = {
+          "S_0": {0: ("S_0", 0), 1: ("S_1", 1)},
+          "S_1": {0: ("S_0", 1), 1: ("S_2", 0)},
+          "S_2": {0: ("S_1", 0), 1: ("S_2", 1)},
         }
       ```
 
     Raises:
-      ValueError: если не соответствует
+      ValueError: если не соответствует.
     """
 
-    for state_name, state_dict in states_dict.items():
-      if not isinstance(state_name, MealyMachine._State.NameType):
-        raise ValueError(f"states_dict: state_name '{state_name}' is not str or int")
+    if self._initial_state not in states_dict.keys():
+      raise KeyError(
+        "MealyMachine (in states_dict):\n"
+        f"Invalid initial state '{self._initial_state}' is not defined in states_dict. "
+        f"Available states: {list(states_dict.keys())}"
+      )
 
-      if len(state_dict.keys()) != len([0, 1]):
-        raise ValueError(
-          "stated_dict: there should be only two keys: [0, 1], no more, no less, "
-          f"your variant is wrong: {list(state_dict.keys())}"
+    for state_name, state_dict in states_dict.items():
+      # MARK: Validation
+
+      if not isinstance(state_name, MealyMachine._State.NameType):
+        raise KeyError(
+          "MealyMachine (in states_dict):\n"
+          f"Invalid state name '{state_name}': "
+          f"expected str or int, got {type(state_name)}"
         )
 
-      for digit, state_digit_info in state_dict.items():
-        if digit not in {1, 0}:
-          raise ValueError(f"states_dict: digit '{digit}' is not binary digit")
+      if set(state_dict.keys()) != {0, 1}:
+        raise KeyError(
+          "MealyMachine (in states_dict):\n"
+          f"Invalid transitions in state '{state_name}': "
+          f"expected keys {{0, 1}}, but got {list(state_dict.keys())}"
+        )
 
-        if len(state_digit_info) != len(
-          [MealyMachine._State.NameType, MealyMachine._State.BinaryDigit]
-        ):
+      for input_digit, (next_state, output_digit) in state_dict.items():
+        if not isinstance(next_state, MealyMachine._State.NameType):
           raise ValueError(
-            "stated_dict: first element in state_digit_info should be str or int, "
-            "second should be binary digit, no more, no less, "
-            f"your variant is wrong: {state_digit_info}"
+            "MealyMachine (in states_dict):\n"
+            f"Invalid next state in transition {input_digit} -> {next_state}: "
+            f"expected str or int, got {type(next_state)}"
           )
 
-        state_if = state_digit_info[0]
-        digit_if = state_digit_info[1]
-
-        if not isinstance(state_if, MealyMachine._State.NameType):
+        if output_digit not in {1, 0}:
           raise ValueError(
-            f"states_dict: state_if_{digit} '{state_if}' is not str or int"
+            "MealyMachine (in states_dict):\n"
+            "Invalid output digit in transition "
+            f"{state_name} --{input_digit}--> {next_state}: "
+            f"expected 0 or 1, got {output_digit}"
           )
 
-        if digit_if not in {1, 0}:
-          raise ValueError(
-            f"states_dict: digit_if_{digit} '{digit_if}' is not str or int"
-          )
-
-      state_if_0 = state_dict[0][0]
-      state_if_1 = state_dict[1][0]
-
-      digit_if_0 = state_dict[0][1]
-      digit_if_1 = state_dict[1][1]
+      # MARK: ~Validation
 
       self._states.setdefault(
         state_name,
         MealyMachine._State(
-          state_name,
-          state_if_0,
-          state_if_1,
-          digit_if_0,  # type: ignore
-          digit_if_1,  # type: ignore
+          state_dict[0][0],  # next_state if input=0
+          state_dict[1][0],  # next_state if input=1
+          state_dict[0][1],  # type: ignore; output if input=0
+          state_dict[1][1],  # type: ignore; output if input=1
         ),
       )
