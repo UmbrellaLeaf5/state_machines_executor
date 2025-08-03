@@ -7,10 +7,10 @@ def NumberMulThree() -> None:
   print()
 
   # словарь конечного автомата, который умножает на 3 (bin: 11) исходное число
-  plus_mul_states_dict: dict[int, list[int | str]] = {
-    0: [0, "0", 1, "1"],
-    1: [0, "1", 2, "0"],
-    2: [1, "0", 2, "1"],
+  plus_mul_states_dict: MealyMachine.Dict = {
+    "S_0": {0: ["S_0", 0], 1: ["S_1", 1]},
+    "S_1": {0: ["S_0", 1], 1: ["S_2", 0]},
+    "S_2": {0: ["S_1", 0], 1: ["S_2", 1]},
   }
 
   for i in range(0, 100):
@@ -22,14 +22,14 @@ def NumberMulThree() -> None:
     real_answer: str = bin(i * 3)[2::]
     print(f"real answer: {real_answer}")
 
-    machine = MealyMachine(bin(i)[2::], plus_mul_states_dict)
+    machine = MealyMachine(bin(i)[2::], plus_mul_states_dict, "S_0")
     print(f"machine ans: {machine.GetAnswer()}")
 
     print()
 
   # bigger testing
   for i in range(0, 10000):
-    machine = MealyMachine(bin(i)[2::], plus_mul_states_dict)
+    machine = MealyMachine(bin(i)[2::], plus_mul_states_dict, "S_0")
     assert bin(i * 3)[2::] == machine.GetAnswer()
 
 
