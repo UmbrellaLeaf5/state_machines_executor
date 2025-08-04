@@ -4,8 +4,4 @@ version = "0.1.0"
 description = "Creating an executor to simplify the creation of Moore and Mealy finite state machines that receive a binary number as input"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "dearpygui>=2.1.0",
- "icecream>=2.1.5",
- "pytest>=8.4.1",
-]
+dependencies = ["dearpygui>=2.1.0", "icecream>=2.1.5", "pytest>=8.4.1"]
