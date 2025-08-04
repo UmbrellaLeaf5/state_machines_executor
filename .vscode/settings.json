@@ -3,7 +3,8 @@
   "python-envs.pythonProjects": [],
   "cSpell.words": [
     "dearpygui",
-    "pytest"
+    "pytest",
+    "venv"
   ],
   "ruff.configuration": "ruff.toml",
 }
