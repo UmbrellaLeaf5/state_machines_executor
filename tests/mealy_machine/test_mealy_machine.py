@@ -2,7 +2,7 @@
 
 import pytest
 
-from uniclasses.mealy_machine import MealyMachine
+from state_machines.mealy_machine import MealyMachine
 
 
 def test_initial_state_not_in_states_dict():

@@ -1,4 +1,4 @@
-from uniclasses.mealy_machine import MealyMachine
+from state_machines.mealy_machine import MealyMachine
 
 
 def NumberMulThree() -> None:

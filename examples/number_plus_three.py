@@ -1,4 +1,4 @@
-from uniclasses.moore_machine import MooreMachine
+from state_machines.moore_machine import MooreMachine
 
 
 def NumberPlusThree() -> None:

@@ -3,7 +3,7 @@
   "python-envs.pythonProjects": [],
   "cSpell.words": [
     "dearpygui",
-    "uniclasses"
+    "pytest"
   ],
   "ruff.configuration": "ruff.toml",
 }

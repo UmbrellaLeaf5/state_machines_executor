@@ -1,4 +1,4 @@
-from uniclasses.state import BinaryDigit, MooreState, StateNameType
+from state_machines.state import BinaryDigit, MooreState, StateNameType
 
 
 class MooreMachine:
@@ -53,7 +53,17 @@ class MooreMachine:
         zeros_amount (int, optional): кол-во незначащих доп. нулей. Defaults to 4.
         should_start (bool, optional): факт необходимости начала работы автомата.
           Defaults to True.
+
+    Raises:
+      ValueError: если формат исходного числа некорректен
     """
+
+    if set(number) > {"0", "1"}:
+      raise ValueError(
+        "MealyMachine (in states_dict):\n"
+        f"Invalid number format: "
+        f"expected binary number, but got '{number}'"
+      )
 
     self._initial_state = initial_state
 
@@ -90,7 +100,9 @@ class MooreMachine:
 
       # TODO: добавить логику с остановкой автомата в конкретном состоянии
 
-      self._answer += str(state.Digit()) if state.Digit() is not None else ""
+      if state.Digit() is not None:
+        self._answer += str(state.Digit())
+
       state_name = state.StateIf(last_digit)  # type: ignore
 
     self._answer = str(int("".join(reversed(self._answer))))

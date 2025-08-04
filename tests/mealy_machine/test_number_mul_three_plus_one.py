@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from uniclasses.mealy_machine import MealyMachine
+from state_machines.mealy_machine import MealyMachine
 
 
 # Общий словарь состояний автомата для умножения на 3 и сложения с 1

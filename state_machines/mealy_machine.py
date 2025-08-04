@@ -1,4 +1,4 @@
-from uniclasses.state import BinaryDigit, MealyState, StateNameType
+from state_machines.state import BinaryDigit, MealyState, StateNameType
 
 
 class MealyMachine:
@@ -52,7 +52,17 @@ class MealyMachine:
         zeros_amount (int, optional): кол-во незначащих доп. нулей. Defaults to 4.
         should_start (bool, optional): факт необходимости начала работы автомата.
           Defaults to True.
+
+    Raises:
+      ValueError: если формат исходного числа некорректен
     """
+
+    if set(number) > {"0", "1"}:
+      raise ValueError(
+        "MealyMachine (in states_dict):\n"
+        f"Invalid number format: "
+        f"expected binary number, but got '{number}'"
+      )
 
     self._initial_state = initial_state
 
