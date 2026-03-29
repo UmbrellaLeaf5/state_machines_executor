@@ -2,7 +2,7 @@
 
 import pytest
 
-from state_machines.moore_machine import MooreMachine
+from state_machines.old.moore_machine import MooreMachine
 
 
 def test_initial_state_not_in_states_dict():

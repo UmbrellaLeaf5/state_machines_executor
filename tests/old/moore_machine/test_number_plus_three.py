@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from state_machines.moore_machine import MooreMachine
+from state_machines.old.moore_machine import MooreMachine
 
 
 # Общий словарь состояний для тестов
@@ -68,5 +68,5 @@ def test_empty_input():
 def test_invalid_input():
   """Проверка некорректного ввода (недопустимые символы)."""
   with pytest.raises(ValueError):
-    machine = MooreMachine("10201", PLUS_THREE_STATES, "S_0")  # '2' — недопустимый символ
+    machine = MooreMachine("10201", PLUS_THREE_STATES, "S_0")  # '2' - недопустимый символ
     print(machine.GetAnswer())
