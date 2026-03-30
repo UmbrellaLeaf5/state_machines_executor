@@ -11,10 +11,10 @@ class MealyConditionProtocol[InputType](Protocol):
   def __call__(self, input: InputType, *args: Any, **kwargs: Any) -> bool: ...
 
 
-class MealyFunctionProtocol[ResultType](Protocol):
+class MealyFunctionProtocol[OutputType](Protocol):
   def __call__(
-    self, previous_result: ResultType, *args: Any, **kwargs: Any
-  ) -> ResultType: ...
+    self, previous_output: OutputType, *args: Any, **kwargs: Any
+  ) -> OutputType: ...
 
 
 class MealyInputProcessorProtocol[InputType](Protocol):
@@ -22,12 +22,12 @@ class MealyInputProcessorProtocol[InputType](Protocol):
 
 
 @dataclass
-class MealyTransition[InputType, ResultType]:
+class MealyTransition[InputType, OutputType]:
   source_state: str
   target_state: str
 
   condition: MealyConditionProtocol[InputType]
-  function: MealyFunctionProtocol[ResultType]
+  function: MealyFunctionProtocol[OutputType]
   input_processor: MealyInputProcessorProtocol[InputType]
 
   def is_transferable(
@@ -39,12 +39,12 @@ class MealyTransition[InputType, ResultType]:
     return self.condition(input, **condition_kwargs)
 
   def execute(
-    self, previous_result: ResultType, function_kwargs: Kwargs | None = None
-  ) -> ResultType:
+    self, previous_output: OutputType, function_kwargs: Kwargs | None = None
+  ) -> OutputType:
     if function_kwargs is None:
       function_kwargs = {}
 
-    return self.function(previous_result, **function_kwargs)
+    return self.function(previous_output, **function_kwargs)
 
   def process_input(
     self, input: InputType, processor_kwargs: Kwargs | None = None
@@ -56,12 +56,12 @@ class MealyTransition[InputType, ResultType]:
 
 
 @dataclass
-class MealyState[InputType, ResultType]:
+class MealyState[InputType, OutputType]:
   name: str
 
-  transitions: dict[str, MealyTransition[InputType, ResultType]]
+  transitions: dict[str, MealyTransition[InputType, OutputType]]
 
-  def add_transition(self, transition: MealyTransition[InputType, ResultType]):
+  def add_transition(self, transition: MealyTransition[InputType, OutputType]):
     if transition.source_state != self.name:
       raise ValueError(
         f"Invalid transition.source_state: {transition.source_state} != {self.name}"
@@ -71,7 +71,7 @@ class MealyState[InputType, ResultType]:
 
   def get_available_transitions(
     self, input: InputType, condition_kwargs: Kwargs | None = None
-  ) -> list[MealyTransition[InputType, ResultType]]:
+  ) -> list[MealyTransition[InputType, OutputType]]:
     if condition_kwargs is None:
       condition_kwargs = {}
 
