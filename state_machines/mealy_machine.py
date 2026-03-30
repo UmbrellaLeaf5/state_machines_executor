@@ -111,7 +111,7 @@ class MealyMachine[InputType, ResultType]:
 
     if len(available_transitions) > 1:
       raise RuntimeError(
-        f"Ambiguous transition: {[t.state_name for t in available_transitions]}"
+        f"Ambiguous transition: {[t.target_state for t in available_transitions]}"
       )
 
     transition = available_transitions[0]
@@ -122,10 +122,10 @@ class MealyMachine[InputType, ResultType]:
       self.__current_input, self.__processor_kwargs
     )
 
-    target_state = self.__states.get(transition.state_name)
+    target_state = self.__states.get(transition.target_state)
     if target_state is None:
       raise KeyError(
-        f"Target state '{transition.state_name}' not found in machine states"
+        f"Target state '{transition.target_state}' not found in machine states"
       )
 
     self.__current_state = target_state
@@ -142,4 +142,7 @@ class MealyMachine[InputType, ResultType]:
       if result is None:
         break
 
+    return self.__results
+
+  def get_results(self) -> list[tuple[InputType, ResultType]]:
     return self.__results

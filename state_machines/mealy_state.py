@@ -22,8 +22,9 @@ class MealyInputProcessorProtocol[InputType](Protocol):
 
 
 @dataclass
-class MealyStateTransitionInfo[InputType, ResultType]:
-  state_name: str
+class MealyTransition[InputType, ResultType]:
+  source_state: str
+  target_state: str
 
   condition: MealyConditionProtocol[InputType]
   function: MealyFunctionProtocol[ResultType]
@@ -58,14 +59,19 @@ class MealyStateTransitionInfo[InputType, ResultType]:
 class MealyState[InputType, ResultType]:
   name: str
 
-  transitions: dict[str, MealyStateTransitionInfo[InputType, ResultType]]
+  transitions: dict[str, MealyTransition[InputType, ResultType]]
 
-  def add_transition(self, transition: MealyStateTransitionInfo[InputType, ResultType]):
-    self.transitions[transition.state_name] = transition
+  def add_transition(self, transition: MealyTransition[InputType, ResultType]):
+    if transition.source_state != self.name:
+      raise ValueError(
+        f"Invalid transition.source_state: {transition.source_state} != {self.name}"
+      )
+
+    self.transitions[transition.target_state] = transition
 
   def get_available_transitions(
     self, input: InputType, condition_kwargs: Kwargs | None = None
-  ) -> list[MealyStateTransitionInfo[InputType, ResultType]]:
+  ) -> list[MealyTransition[InputType, ResultType]]:
     if condition_kwargs is None:
       condition_kwargs = {}
 
