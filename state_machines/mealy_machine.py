@@ -2,20 +2,41 @@ from state_machines.mealy_state import Kwargs, MealyConditionProtocol, MealyStat
 
 
 class MealyMachine[InputType, ResultType]:
-  states: dict[str, MealyState[InputType, ResultType]] = {}
+  states: dict[str, MealyState[InputType, ResultType]]
+  results: list[tuple[InputType, ResultType]]
 
-  results: list[tuple[InputType, ResultType]] = []
-
-  current_state: MealyState[InputType, ResultType] | None = None
-  current_result: ResultType | None = None
-  current_input: InputType | None = None
+  current_state: MealyState[InputType, ResultType] | None
+  current_result: ResultType | None
+  current_input: InputType | None
 
   condition_kwargs: Kwargs
   function_kwargs: Kwargs
   processor_kwargs: Kwargs
 
-  stop_condition: MealyConditionProtocol[InputType] | None = None
+  stop_condition: MealyConditionProtocol[InputType] | None
   stop_condition_kwargs: Kwargs
+
+  def __init__(self):
+    self.states = {}
+    self.results = []
+
+    self.current_state = None
+    self.current_result = None
+    self.current_input = None
+
+    self.condition_kwargs = {}
+    self.function_kwargs = {}
+    self.processor_kwargs = {}
+
+    self.stop_condition = None
+    self.stop_condition_kwargs = {}
+
+  def reset(self):
+    self.current_state = None
+    self.current_result = None
+    self.current_input = None
+
+    self.results.clear()
 
   def add_state(self, state: MealyState[InputType, ResultType]):
     self.states[state.name] = state
@@ -49,8 +70,13 @@ class MealyMachine[InputType, ResultType]:
       self.processor_kwargs = processor_kwargs
 
   def set_stop_condition(
-    self, stop_condition: MealyConditionProtocol, stop_condition_kwargs: Kwargs
+    self,
+    stop_condition: MealyConditionProtocol,
+    stop_condition_kwargs: Kwargs | None = None,
   ):
+    if stop_condition_kwargs is None:
+      stop_condition_kwargs = {}
+
     self.stop_condition = stop_condition
     self.stop_condition_kwargs = stop_condition_kwargs
 
@@ -65,7 +91,7 @@ class MealyMachine[InputType, ResultType]:
       raise RuntimeError("Current input not set")
 
     if self.stop_condition and self.stop_condition(
-      self.current_input, self.stop_condition_kwargs
+      self.current_input, **self.stop_condition_kwargs
     ):
       return None
 
