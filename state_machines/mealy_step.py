@@ -4,8 +4,12 @@
 Содержит перечисление причин остановки и классы для хранения результатов шагов.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
+
+
+# MARK: MealyStepReason
+# --------------------------------------------------------------------------------------
 
 
 class MealyStepReason(Enum):
@@ -17,22 +21,26 @@ class MealyStepReason(Enum):
   EXCEPTION = auto()  # исключение при выполнении
 
 
+# MARK: MealyStepData
+# --------------------------------------------------------------------------------------
+
+
 @dataclass
 class MealyStepData[InputType, OutputType]:
   """
   Данные успешного шага выполнения.
 
   Attributes:
-      input: Входное значение после обработки процессором.
+      processed_input: Входное значение после обработки процессором.
       output: Выходное значение, вычисленное функцией перехода.
   """
 
-  input: InputType | None = None
+  processed_input: InputType | None = None
   output: OutputType | None = None
 
   def __iter__(self):
     """Позволяет распаковывать объект как кортеж `(input, output)`."""
-    return iter((self.input, self.output))
+    return iter((self.processed_input, self.output))
 
   @classmethod
   def from_tuple(
@@ -51,6 +59,10 @@ class MealyStepData[InputType, OutputType]:
     return cls(*data)
 
 
+# MARK: MealyStepResult
+# --------------------------------------------------------------------------------------
+
+
 @dataclass
 class MealyStepResult[InputType, OutputType]:
   """
@@ -63,34 +75,22 @@ class MealyStepResult[InputType, OutputType]:
   """
 
   reason: MealyStepReason
-  data: MealyStepData[InputType, OutputType]
+  data: MealyStepData[InputType, OutputType] = field(default_factory=MealyStepData)
   exception: Exception | None = None
 
-  def __init__(
-    self,
-    reason: MealyStepReason,
-    data: tuple[InputType | None, OutputType | None]
-    | MealyStepData[InputType, OutputType]
-    | None = None,
-    exception: Exception | None = None,
-  ):
+  @classmethod
+  def error_step(cls, exception: Exception) -> "MealyStepResult[InputType, OutputType]":
     """
-    Инициализирует результат шага.
+    Создаёт результат шага для исключения.
 
     Args:
-        reason: Причина завершения.
-        data: Данные шага (кортеж, объект `MealyStepData` или `None`).
-        exception: Исключение (только при `EXCEPTION`).
+      exception: Исключение, вызвавшее остановку.
+
+    Returns:
+      Объект `MealyStepResult` с `reason=EXCEPTION`.
     """
 
-    self.reason = reason
-    self.exception = exception
-
-    if data is None:
-      self.data = MealyStepData[InputType, OutputType]()
-
-    elif isinstance(data, tuple):
-      self.data = MealyStepData[InputType, OutputType].from_tuple(data)
-
-    else:
-      self.data = data
+    return cls(
+      reason=MealyStepReason.EXCEPTION,
+      exception=exception,
+    )

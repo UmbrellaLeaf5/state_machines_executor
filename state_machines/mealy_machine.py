@@ -5,6 +5,7 @@
 """
 
 import warnings
+from collections.abc import Callable
 
 from state_machines.mealy_state import (
   Kwargs,
@@ -24,6 +25,7 @@ class _UNSET:
 
 
 _UNSET_VAL = _UNSET()
+
 
 # IMP: идеология методов:
 #
@@ -185,6 +187,8 @@ class MealyMachine[InputType, OutputType]:
     if also_reset_stop_condition:
       self.remove_stop_condition()
 
+  # --------------------------------------------------------------------------------------
+
   def validate(self) -> None:
     """
     Проверяет целостность автомата.
@@ -208,6 +212,44 @@ class MealyMachine[InputType, OutputType]:
 
       raise ValueError(msg)
 
+  def _format_ambiguous_error(
+    self, available_transitions: list[MealyTransition[InputType, OutputType]]
+  ) -> str:
+    """
+    Формирует сообщение об ошибке неоднозначности перехода.
+
+    Args:
+      available_transitions: Список переходов, которые одновременно доступны.
+
+    Returns:
+      Отформатированное сообщение с деталями о текущем состоянии,
+      входе, выходе, общих kwargs и каждом из конфликтующих переходов.
+    """
+
+    if isinstance(self.__current_state, _UNSET):
+      raise RuntimeError("Current state not set")
+
+    def _get_name(obj: Callable) -> str:
+      return getattr(obj, "__name__", repr(obj))
+
+    transitions_desc = [
+      f"  to '{t.target_state}' with:\n"
+      f"    condition: '{_get_name(t.condition)}'\n"
+      f"    function: '{_get_name(t.function)}'\n"
+      f"    processor: '{_get_name(t.input_processor)}'"
+      for t in available_transitions
+    ]
+
+    return (
+      f"Ambiguous transition: {len(available_transitions)} transitions available.\n"
+      f"Current state: '{self.__current_state.name}'\n"
+      f"Current input: '{self.__current_input}'\n"
+      f"Current output: '{self.__current_output}'\n"
+      f"Condition kwargs: {self.__condition_kwargs}\n"
+      "Transitions:\n" + "\n".join(transitions_desc)
+    )
+
+  # --------------------------------------------------------------------------------------
   # MARK: States
   # --------------------------------------------------------------------------------------
 
@@ -239,6 +281,8 @@ class MealyMachine[InputType, OutputType]:
       raise ValueError(f"State '{state.name}' already exists")
 
     self.__states[state.name] = state
+
+  # --------------------------------------------------------------------------------------
 
   def remove_state(self, state_name: str, cleanup_transitions: bool = False) -> None:
     """
@@ -278,6 +322,8 @@ class MealyMachine[InputType, OutputType]:
 
     self.__states.pop(state_name)
 
+  # --------------------------------------------------------------------------------------
+
   def set_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
     """
     Заменяет все состояния новыми.
@@ -288,6 +334,8 @@ class MealyMachine[InputType, OutputType]:
 
     self.clear_states()
     self.update_states(states)
+
+  # --------------------------------------------------------------------------------------
 
   def update_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
     """
@@ -329,6 +377,8 @@ class MealyMachine[InputType, OutputType]:
 
     for name, state in items:
       self.__states[name] = state
+
+  # --------------------------------------------------------------------------------------
 
   def clear_states(self) -> None:
     """Удаляет все состояния."""
@@ -376,6 +426,8 @@ class MealyMachine[InputType, OutputType]:
       for target, trans in state.transitions.items()
     ]
 
+  # --------------------------------------------------------------------------------------
+
   def get_state_transitions_amount(self, state_name: str) -> int:
     """
     Возвращает количество переходов из указанного состояния.
@@ -394,6 +446,8 @@ class MealyMachine[InputType, OutputType]:
       raise KeyError(f"State '{state_name}' not found")
 
     return len(self.__states[state_name].transitions)
+
+  # --------------------------------------------------------------------------------------
 
   def get_all_transitions(
     self,
@@ -418,6 +472,8 @@ class MealyMachine[InputType, OutputType]:
       for state_name, state in self.__states.items()
       for target, trans in state.transitions.items()
     ]
+
+  # --------------------------------------------------------------------------------------
 
   def get_all_transitions_amount(self) -> int:
     """Возвращает общее количество переходов во всех состояниях."""
@@ -484,6 +540,8 @@ class MealyMachine[InputType, OutputType]:
     else:
       source.add_transition(transition)
 
+  # --------------------------------------------------------------------------------------
+
   def remove_transition(self, source_state: str, target_state: str) -> None:
     """
     Удаляет переход.
@@ -505,6 +563,8 @@ class MealyMachine[InputType, OutputType]:
       raise KeyError(f"Transition from '{source_state}' to '{target_state}' is not found")
 
     state.remove_transition(target_state)
+
+  # --------------------------------------------------------------------------------------
 
   def set_transitions(
     self,
@@ -528,6 +588,8 @@ class MealyMachine[InputType, OutputType]:
     self.clear_transitions()
     self.update_transitions(transitions)
 
+  # --------------------------------------------------------------------------------------
+
   def update_transitions(
     self,
     transitions: list[
@@ -549,6 +611,8 @@ class MealyMachine[InputType, OutputType]:
 
     for source, target, cond, func, proc in transitions:
       self.add_transition(source, target, cond, func, proc)
+
+  # --------------------------------------------------------------------------------------
 
   def clear_transitions(self) -> None:
     """Удаляет все переходы из всех состояний."""
@@ -613,6 +677,8 @@ class MealyMachine[InputType, OutputType]:
     self.clear_current_data()
     self.update_current_data(state_name, output, input)
 
+  # --------------------------------------------------------------------------------------
+
   def update_current_data(
     self,
     state_name: str | None,
@@ -648,6 +714,8 @@ class MealyMachine[InputType, OutputType]:
     if input is not None:
       self.__current_input = input
 
+  # --------------------------------------------------------------------------------------
+
   def clear_current_data(self) -> None:
     """Сбрасывает текущие данные в состояние 'не установлено'"""
 
@@ -677,6 +745,8 @@ class MealyMachine[InputType, OutputType]:
     self.clear_common_kwargs()
     self.update_common_kwargs(condition_kwargs, function_kwargs, processor_kwargs)
 
+  # --------------------------------------------------------------------------------------
+
   def update_common_kwargs(
     self,
     condition_kwargs: Kwargs | None = None,
@@ -700,6 +770,8 @@ class MealyMachine[InputType, OutputType]:
 
     if processor_kwargs is not None:
       self.__processor_kwargs.update(processor_kwargs)
+
+  # --------------------------------------------------------------------------------------
 
   def clear_common_kwargs(self) -> None:
     """Очищает все common kwargs."""
@@ -730,6 +802,8 @@ class MealyMachine[InputType, OutputType]:
 
     self.__stop_condition = stop_condition
     self.__stop_condition_kwargs = stop_condition_kwargs
+
+  # --------------------------------------------------------------------------------------
 
   def remove_stop_condition(self) -> None:
     """Удаляет условие остановки."""
@@ -770,27 +844,27 @@ class MealyMachine[InputType, OutputType]:
     if self.__stop_condition and self.__stop_condition(
       self.__current_input, **self.__stop_condition_kwargs
     ):
-      return MealyStepResult(reason=MealyStepReason.STOP_CONDITION)
+      return MealyStepResult[InputType, OutputType](reason=MealyStepReason.STOP_CONDITION)
 
     available_transitions = self.__current_state.get_available_transitions(
       self.__current_input, self.__condition_kwargs
     )
 
     if not available_transitions:
-      return MealyStepResult(reason=MealyStepReason.NO_TRANSITION)
-
-    if len(available_transitions) > 1:
-      raise RuntimeError(
-        f"Ambiguous transition: {[t.target_state for t in available_transitions]}"
+      warnings.warn(
+        f"No transitions in state '{self.__current_state.name}' "
+        f"at input '{self.__current_input}' "
+        f"with previous output '{self.__current_output}'",
+        UserWarning,
+        stacklevel=2,
       )
 
+      return MealyStepResult[InputType, OutputType](reason=MealyStepReason.NO_TRANSITION)
+
+    if len(available_transitions) > 1:
+      raise RuntimeError(self._format_ambiguous_error(available_transitions))
+
     transition = available_transitions[0]
-
-    output = transition.execute(self.__current_output, self.__function_kwargs)
-
-    processed_input = transition.process_input(
-      self.__current_input, self.__processor_kwargs
-    )
 
     target_state = self.__states.get(transition.target_state)
     if target_state is None:
@@ -798,13 +872,21 @@ class MealyMachine[InputType, OutputType]:
         f"Target state '{transition.target_state}' not found in machine states"
       )
 
+    output = transition.execute(self.__current_output, self.__function_kwargs)
+
+    processed_input = transition.process_input(
+      self.__current_input, self.__processor_kwargs
+    )
+
     self.__current_state = target_state
     self.__current_output = output
     self.__current_input = processed_input
 
     mealy_step = MealyStepResult(
-      reason=MealyStepReason.SUCCESS, data=(processed_input, output)
+      reason=MealyStepReason.SUCCESS,
+      data=MealyStepData.from_tuple((processed_input, output)),
     )
+
     self.__results.append(mealy_step)
     return mealy_step
 
@@ -823,7 +905,8 @@ class MealyMachine[InputType, OutputType]:
                         Если `False`, добавляет новые шаги к существующим.
       raise_on_error: Если `True`, падает с исключением, проходя по циклу.
                       Если `False`, завершается на исключении, добавляя в историю
-                      шаг с причиной `EXCEPTION`.
+                      шаг с причиной `EXCEPTION`
+                      (c ошибками валидации графа всё равно будет падать!).
 
     Returns:
       Список шагов выполнения (успешные и, возможно, шаг с исключением).
@@ -842,15 +925,11 @@ class MealyMachine[InputType, OutputType]:
         if raise_on_error:
           raise e
 
-        error_step = MealyStepResult(
-          reason=MealyStepReason.EXCEPTION,
-          exception=e,
-        )
-
-        self.__results.append(error_step)
+        self.__results.append(MealyStepResult[InputType, OutputType].error_step(e))
         break
 
       if step_result.reason != MealyStepReason.SUCCESS:
+        self.__results.append(step_result)  # добавление ошибочного step
         break
 
     return self.get_results()
@@ -866,12 +945,15 @@ class MealyMachine[InputType, OutputType]:
   def get_results_data(self) -> list[MealyStepData[InputType, OutputType]]:
     """Возвращает копии данных всех шагов."""
 
-    return [MealyStepData(step.data.input, step.data.output) for step in self.__results]
+    return [
+      MealyStepData(step.data.processed_input, step.data.output)
+      for step in self.__results
+    ]
 
   def get_results_tuple(self) -> list[tuple[InputType | None, OutputType | None]]:
     """Возвращает список кортежей `(input, output)` для всех шагов."""
 
-    return [(step.data.input, step.data.output) for step in self.__results]
+    return [(step.data.processed_input, step.data.output) for step in self.__results]
 
   def get_only_results(self) -> list[OutputType | None]:
     """Возвращает список выходных значений для всех шагов."""

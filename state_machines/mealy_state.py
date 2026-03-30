@@ -13,6 +13,10 @@ from typing import Any, Protocol
 Kwargs = dict[str, Any]
 
 
+# MARK: Protocols
+# --------------------------------------------------------------------------------------
+
+
 class MealyConditionProtocol[InputType](Protocol):
   """
   Протокол для функции-условия перехода.
@@ -34,6 +38,9 @@ class MealyConditionProtocol[InputType](Protocol):
       `True` если условие выполнено, иначе `False`.
     """
     ...
+
+
+# --------------------------------------------------------------------------------------
 
 
 class MealyFunctionProtocol[OutputType](Protocol):
@@ -60,6 +67,9 @@ class MealyFunctionProtocol[OutputType](Protocol):
     ...
 
 
+# --------------------------------------------------------------------------------------
+
+
 class MealyInputProcessorProtocol[InputType](Protocol):
   """
   Протокол для функции обработки входа.
@@ -81,6 +91,10 @@ class MealyInputProcessorProtocol[InputType](Protocol):
       Обработанное входное значение.
     """
     ...
+
+
+# MARK: MealyTransition
+# --------------------------------------------------------------------------------------
 
 
 @dataclass
@@ -106,6 +120,8 @@ class MealyTransition[InputType, OutputType]:
   function: MealyFunctionProtocol[OutputType]
   input_processor: MealyInputProcessorProtocol[InputType]
 
+  # --------------------------------------------------------------------------------------
+
   def is_transferable(
     self, input: InputType, condition_kwargs: Kwargs | None = None
   ) -> bool:
@@ -125,6 +141,8 @@ class MealyTransition[InputType, OutputType]:
 
     return self.condition(input, **condition_kwargs)
 
+  # --------------------------------------------------------------------------------------
+
   def execute(
     self, previous_output: OutputType, function_kwargs: Kwargs | None = None
   ) -> OutputType:
@@ -143,6 +161,8 @@ class MealyTransition[InputType, OutputType]:
       function_kwargs = {}
 
     return self.function(previous_output, **function_kwargs)
+
+  # --------------------------------------------------------------------------------------
 
   def process_input(
     self, input: InputType, processor_kwargs: Kwargs | None = None
@@ -164,6 +184,10 @@ class MealyTransition[InputType, OutputType]:
     return self.input_processor(input, **processor_kwargs)
 
 
+# MARK: MealyState
+# --------------------------------------------------------------------------------------
+
+
 @dataclass
 class MealyState[InputType, OutputType]:
   """
@@ -181,6 +205,8 @@ class MealyState[InputType, OutputType]:
 
   transitions: dict[str, MealyTransition[InputType, OutputType]]
 
+  # --------------------------------------------------------------------------------------
+
   def has_transition(self, target_state: str) -> bool:
     """
     Проверяет, есть ли переход в указанное состояние.
@@ -193,6 +219,8 @@ class MealyState[InputType, OutputType]:
     """
 
     return target_state in self.transitions
+
+  # --------------------------------------------------------------------------------------
 
   def add_transition(self, transition: MealyTransition[InputType, OutputType]) -> None:
     """
@@ -218,6 +246,8 @@ class MealyState[InputType, OutputType]:
       )
 
     self.transitions[transition.target_state] = transition
+
+  # --------------------------------------------------------------------------------------
 
   def replace_transition(
     self, transition: MealyTransition[InputType, OutputType]
@@ -246,6 +276,8 @@ class MealyState[InputType, OutputType]:
 
     self.transitions[transition.target_state] = transition
 
+  # --------------------------------------------------------------------------------------
+
   def remove_transition(self, target_state: str) -> None:
     """
     Удаляет переход в указанное состояние.
@@ -261,6 +293,8 @@ class MealyState[InputType, OutputType]:
       raise KeyError(f"Transition from '{self.name}' to '{target_state}' not found")
 
     self.transitions.pop(target_state)
+
+  # --------------------------------------------------------------------------------------
 
   def get_available_transitions(
     self, input: InputType, condition_kwargs: Kwargs | None = None
