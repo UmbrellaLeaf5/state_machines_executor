@@ -165,7 +165,7 @@ class MealyMachine[InputType, OutputType]:
   # MARK: Reset Machine
   # --------------------------------------------------------------------------------------
 
-  def reset_machine(
+  def reset_execution(
     self, also_reset_kwargs: bool = False, also_reset_stop_condition: bool = False
   ) -> None:
     """
