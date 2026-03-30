@@ -67,6 +67,11 @@ class MealyState[InputType, OutputType]:
         f"Invalid transition.source_state: {transition.source_state} != {self.name}"
       )
 
+    if transition.target_state in self.transitions:
+      raise ValueError(
+        f"Transition from '{self.name}' to '{transition.target_state}' already exists. "
+        "Only one transition per target state is allowed."
+      )
     self.transitions[transition.target_state] = transition
 
   def get_available_transitions(

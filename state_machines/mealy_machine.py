@@ -113,11 +113,27 @@ class MealyMachine[InputType, OutputType]:
   # MARK: Reset Machine
   # --------------------------------------------------------------------------------------
 
-  def reset_machine(self) -> None:
+  def reset_machine(
+    self, also_reset_kwargs: bool = False, also_reset_stop_condition: bool = False
+  ) -> None:
     self.clear_current_data()
-    self.__results.clear()
+    self.clear_results()
+
+    if also_reset_kwargs:
+      self.clear_common_kwargs()
+
+    if also_reset_stop_condition:
+      self.remove_stop_condition()
 
   # MARK: States
+  # --------------------------------------------------------------------------------------
+
+  def get_state_names(self) -> list[str]:
+    return list(self.__states.keys())
+
+  def get_states_amount(self) -> int:
+    return len(self.__states)
+
   # --------------------------------------------------------------------------------------
   # !: entity + entities
 
@@ -127,7 +143,7 @@ class MealyMachine[InputType, OutputType]:
 
     self.__states[state.name] = state
 
-  def remove_state(self, state_name: str) -> None:
+  def remove_state(self, state_name: str, cleanup_transitions: bool = False) -> None:
     if state_name not in self.__states:
       raise KeyError(f"State '{state_name}' is not found")
 
@@ -136,9 +152,16 @@ class MealyMachine[InputType, OutputType]:
       and self.__current_state.name == state_name
     ):
       warnings.warn(
-        f"Removing current state '{state_name}', machine reset", UserWarning, stacklevel=2
+        f"Removing current state '{state_name}', machine reset",
+        UserWarning,
+        stacklevel=2,
       )
       self.clear_current_data()
+
+    if cleanup_transitions:
+      for state in self.__states.values():
+        if state_name in state.transitions:
+          del state.transitions[state_name]
 
     del self.__states[state_name]
 
@@ -167,6 +190,42 @@ class MealyMachine[InputType, OutputType]:
     self.__states.clear()
 
   # MARK: Transitions
+  # --------------------------------------------------------------------------------------
+
+  def get_state_transitions(
+    self, state_name: str
+  ) -> list[
+    tuple[
+      str,
+      MealyConditionProtocol[InputType],
+      MealyFunctionProtocol[OutputType],
+      MealyInputProcessorProtocol[InputType],
+    ]
+  ]:
+    if state_name not in self.__states:
+      raise KeyError(f"State '{state_name}' not found")
+
+    state = self.__states[state_name]
+
+    return [
+      (
+        target,
+        trans.condition,
+        trans.function,
+        trans.input_processor,
+      )
+      for target, trans in state.transitions.items()
+    ]
+
+  def get_state_transitions_amount(self, state_name: str) -> int:
+    if state_name not in self.__states:
+      raise KeyError(f"State '{state_name}' not found")
+
+    return len(self.__states[state_name].transitions)
+
+  def get_all_transitions_amount(self) -> int:
+    return sum(len(state.transitions) for state in self.__states.values())
+
   # --------------------------------------------------------------------------------------
   # !: entity + entities
 
@@ -242,7 +301,34 @@ class MealyMachine[InputType, OutputType]:
     for state in self.__states.values():
       state.transitions.clear()
 
-  # MARK: Current Data
+  # MARK: Current data
+  # --------------------------------------------------------------------------------------
+
+  def get_current_state_name(self) -> str | None:
+    if isinstance(self.__current_state, _UNSET):
+      return None
+
+    return self.__current_state.name
+
+  def get_current_output(self) -> OutputType | None:
+    if isinstance(self.__current_output, _UNSET):
+      return None
+
+    return self.__current_output
+
+  def get_current_input(self) -> InputType | None:
+    if isinstance(self.__current_input, _UNSET):
+      return None
+
+    return self.__current_input
+
+  def is_ready(self) -> bool:
+    return not (
+      isinstance(self.__current_state, _UNSET)
+      or isinstance(self.__current_output, _UNSET)
+      or isinstance(self.__current_input, _UNSET)
+    )
+
   # --------------------------------------------------------------------------------------
   # !: entities
 
@@ -343,6 +429,14 @@ class MealyMachine[InputType, OutputType]:
     if isinstance(self.__current_input, _UNSET):
       raise RuntimeError("Current input not set")
 
+    # IMP: идеологически:
+    # if not self.is_ready():
+    #   raise RuntimeError(
+    #     "Machine is not ready. Call set_current_data() or update_current_data() "
+    #     "with valid state, output and input before running."
+    #   )
+    # (но нужно сужение типов, поэтому не используем)
+
     if self.__stop_condition and self.__stop_condition(
       self.__current_input, **self.__stop_condition_kwargs
     ):
@@ -384,23 +478,30 @@ class MealyMachine[InputType, OutputType]:
     self.__results.append(mealy_step)
     return mealy_step
 
-  def run_all(self) -> list[MealyStepResult[InputType, OutputType]]:
+  # --------------------------------------------------------------------------------------
+
+  def run_all(
+    self, clear_before_run: bool = False
+  ) -> list[MealyStepResult[InputType, OutputType]]:
+    if clear_before_run:
+      self.clear_results()
+
     while True:
       step_result = self.run_once()
 
       if step_result.reason != MealyStepReason.SUCCESS:
         break
 
-    return self.__results
+    return self.get_results()
 
-  # MARK: Get results
+  # MARK: Results
   # --------------------------------------------------------------------------------------
 
   def get_results(self) -> list[MealyStepResult[InputType, OutputType]]:
-    return self.__results
+    return self.__results.copy()
 
   def get_results_data(self) -> list[MealyStepData[InputType, OutputType]]:
-    return [step.data for step in self.__results]
+    return [MealyStepData(step.data.input, step.data.output) for step in self.__results]
 
   def get_results_tuple(self) -> list[tuple[InputType | None, OutputType | None]]:
     return [(step.data.input, step.data.output) for step in self.__results]
@@ -413,3 +514,6 @@ class MealyMachine[InputType, OutputType]:
       return None
 
     return self.__results[-1].data.output
+
+  def clear_results(self) -> None:
+    self.__results.clear()
