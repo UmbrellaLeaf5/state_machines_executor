@@ -1,3 +1,9 @@
+"""
+Модуль с классом автомата Мили.
+
+Предоставляет API для создания, настройки и выполнения автомата.
+"""
+
 import warnings
 
 from state_machines.mealy_state import (
@@ -12,17 +18,19 @@ from state_machines.mealy_step import MealyStepData, MealyStepReason, MealyStepR
 
 
 class _UNSET:
+  """Сентинель для обозначения 'значение не установлено'."""
+
   pass
 
 
 _UNSET_VAL = _UNSET()
 
 # IMP: идеология методов:
-
+#
 # если есть entity, то есть:
 # 1. def add_entity(self, ...) -> None: ...
 # 2. def remove_entity(self, ...) -> None: ...
-
+#
 # если есть entities, то есть:
 # 1. def set_entities(self, ...) -> None: self.clear_entities(); self.add_entities(...)
 # 2. def update_entities(self, ...) -> None: ...
@@ -30,6 +38,12 @@ _UNSET_VAL = _UNSET()
 
 
 class MealyMachine[InputType, OutputType]:
+  """
+  Автомат Мили.
+
+  Позволяет задать состояния, переходы, выполнять шаги и получать результаты.
+  """
+
   # MARK: Fields
   # --------------------------------------------------------------------------------------
 
@@ -72,6 +86,44 @@ class MealyMachine[InputType, OutputType]:
     function_kwargs: Kwargs | None = None,
     processor_kwargs: Kwargs | None = None,
   ) -> None:
+    """
+    Создаёт автомат Мили.
+
+    Все параметры необязательны. Если не переданы, автомат настраивается позже
+    через соответствующие методы.
+
+    Args:
+      transitions: Список переходов. Каждый переход - кортеж из пяти элементов:
+          (source_state, target_state, condition, function, processor).
+          - source_state: имя исходного состояния
+          - target_state: имя целевого состояния
+          - condition: функция-условие (арг.: input, возвращает bool)
+          - function: функция вычисл. выхода (арг.: previous_output, возвращает output)
+          - processor: функция обработки входа (арг.: input, возвращает новый input)
+
+      initial_state: Имя начального состояния. Если указан, должны быть также указаны
+        `initial_output` и `initial_input`.
+
+      initial_output: Нач. выходное значение. Используется вместе с `initial_state`.
+
+      initial_input: Начальное входное значение. Используется вместе с `initial_state`.
+
+      stop_condition: Функция-условие остановки. Вызывается перед каждым шагом,
+        принимает текущий вход и возвращает `True` для остановки.
+
+      stop_condition_kwargs: Дополнительные именованные аргументы для `stop_condition`.
+        Передаются в функцию как `**kwargs`.
+
+      condition_kwargs: Дополнительные именованные аргументы для всех условий переходов.
+        Передаются в каждую condition как `**kwargs`.
+
+      function_kwargs: Доп. именованные аргументы для всех функций вычисления выхода.
+        Передаются в каждую function как `**kwargs`.
+
+      processor_kwargs: Дополнительные именованные аргументы для всех процессоров входа.
+        Передаются в каждый processor как `**kwargs`.
+    """
+
     self.__states = {}
     self.__results = []
 
@@ -116,6 +168,14 @@ class MealyMachine[InputType, OutputType]:
   def reset_machine(
     self, also_reset_kwargs: bool = False, also_reset_stop_condition: bool = False
   ) -> None:
+    """
+    Сбрасывает состояние выполнения автомата.
+
+    Args:
+      also_reset_kwargs: Если `True`, также очищает все `common kwargs`.
+      also_reset_stop_condition: Если `True`, также удаляет условие остановки.
+    """
+
     self.clear_current_data()
     self.clear_results()
 
@@ -129,21 +189,48 @@ class MealyMachine[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def get_state_names(self) -> list[str]:
+    """Возвращает список имён всех состояний (копия)."""
+
     return list(self.__states.keys())
 
   def get_states_amount(self) -> int:
+    """Возвращает количество состояний."""
+
     return len(self.__states)
 
   # --------------------------------------------------------------------------------------
   # !: entity + entities
 
   def add_state(self, state: MealyState[InputType, OutputType]) -> None:
+    """
+    Добавляет состояние.
+
+    Args:
+      state: Объект состояния.
+
+    Raises:
+      `ValueError`: Если состояние с таким именем уже существует.
+    """
+
     if state.name in self.__states:
       raise ValueError(f"State '{state.name}' already exists")
 
     self.__states[state.name] = state
 
   def remove_state(self, state_name: str, cleanup_transitions: bool = False) -> None:
+    """
+    Удаляет состояние.
+
+    Args:
+      state_name: Имя удаляемого состояния.
+      cleanup_transitions: Если `True`, удаляет все переходы, связ. с этим состоянием:
+        - переходы из других состояний в это состояние,
+        - переходы из этого состояния в другие состояния.
+
+    Raises:
+      `KeyError`: Если состояние не существует.
+    """
+
     if state_name not in self.__states:
       raise KeyError(f"State '{state_name}' is not found")
 
@@ -168,10 +255,28 @@ class MealyMachine[InputType, OutputType]:
     self.__states.pop(state_name)
 
   def set_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
+    """
+    Заменяет все состояния новыми.
+
+    Args:
+      states: Список имён (строк) или объектов `MealyState`.
+    """
+
     self.clear_states()
     self.update_states(states)
 
   def update_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
+    """
+    Добавляет несколько состояний атомарно.
+
+    Args:
+      states: Список имён (строк) или объектов `MealyState`.
+
+    Raises:
+      `TypeError`: При неверном типе элемента.
+      `ValueError`: При дубликате имени в списке или если состояние уже существует.
+    """
+
     items: list[tuple[str, MealyState[InputType, OutputType]]] = []
     seen_names: set[str] = set()
 
@@ -202,6 +307,8 @@ class MealyMachine[InputType, OutputType]:
       self.__states[name] = state
 
   def clear_states(self) -> None:
+    """Удаляет все состояния."""
+
     self.__states.clear()
 
   # MARK: Transitions
@@ -217,6 +324,19 @@ class MealyMachine[InputType, OutputType]:
       MealyInputProcessorProtocol[InputType],
     ]
   ]:
+    """
+    Возвращает список переходов из указанного состояния.
+
+    Args:
+      state_name: Имя состояния.
+
+    Returns:
+      Список кортежей `(target_state, condition, function, processor)`.
+
+    Raises:
+      `KeyError`: Если состояние не существует.
+    """
+
     if state_name not in self.__states:
       raise KeyError(f"State '{state_name}' not found")
 
@@ -233,6 +353,19 @@ class MealyMachine[InputType, OutputType]:
     ]
 
   def get_state_transitions_amount(self, state_name: str) -> int:
+    """
+    Возвращает количество переходов из указанного состояния.
+
+    Args:
+      state_name: Имя состояния.
+
+    Returns:
+      Количество переходов.
+
+    Raises:
+      `KeyError`: Если состояние не существует.
+    """
+
     if state_name not in self.__states:
       raise KeyError(f"State '{state_name}' not found")
 
@@ -249,6 +382,13 @@ class MealyMachine[InputType, OutputType]:
       MealyInputProcessorProtocol[InputType],
     ]
   ]:
+    """
+    Возвращает список всех переходов в автомате.
+
+    Returns:
+      Список кортежей `(source_state, target_state, condition, function, processor)`.
+    """
+
     return [
       (state_name, target, trans.condition, trans.function, trans.input_processor)
       for state_name, state in self.__states.items()
@@ -256,6 +396,8 @@ class MealyMachine[InputType, OutputType]:
     ]
 
   def get_all_transitions_amount(self) -> int:
+    """Возвращает общее количество переходов во всех состояниях."""
+
     return sum(len(state.transitions) for state in self.__states.values())
 
   # --------------------------------------------------------------------------------------
@@ -270,6 +412,24 @@ class MealyMachine[InputType, OutputType]:
     input_processor: MealyInputProcessorProtocol[InputType],
     replace: bool = False,
   ) -> None:
+    """
+    Добавляет переход.
+
+    Если исходное или целевое состояние не существуют, они создаются автоматически.
+
+    Args:
+      source_state: Имя исходного состояния.
+      target_state: Имя целевого состояния.
+      condition: Функция-условие.
+      function: Функция вычисления выхода.
+      input_processor: Функция обработки входа.
+      replace: Если `True` и переход уже существует, он заменяется.
+               Если `False` и переход существует, вызывается `ValueError`.
+
+    Raises:
+      ValueError: Если переход уже существует и `replace=False`.
+    """
+
     # создаём исходное состояние, если его нет
     if source_state not in self.__states:
       self.__states[source_state] = MealyState[InputType, OutputType](source_state, {})
@@ -292,7 +452,7 @@ class MealyMachine[InputType, OutputType]:
       if not replace:
         raise ValueError(
           f"Transition from '{source_state}' to '{target_state}' already exists. "
-          "Use replace=True to replace it."
+          "Use `replace=True` to replace it."
         )
 
       source.replace_transition(transition)
@@ -301,6 +461,17 @@ class MealyMachine[InputType, OutputType]:
       source.add_transition(transition)
 
   def remove_transition(self, source_state: str, target_state: str) -> None:
+    """
+    Удаляет переход.
+
+    Args:
+        source_state: Имя исходного состояния.
+        target_state: Имя целевого состояния.
+
+    Raises:
+        `KeyError`: Если исходное состояние не существует или переход не найден.
+    """
+
     if source_state not in self.__states:
       raise KeyError(f"State '{source_state}' is not found")
 
@@ -323,6 +494,13 @@ class MealyMachine[InputType, OutputType]:
       ]
     ],
   ) -> None:
+    """
+    Заменяет все переходы новыми.
+
+    Args:
+        transitions: Список переходов `(source, target, condition, function, processor)`.
+    """
+
     self.clear_transitions()
     self.update_transitions(transitions)
 
@@ -338,10 +516,19 @@ class MealyMachine[InputType, OutputType]:
       ]
     ],
   ) -> None:
+    """
+    Добавляет несколько переходов.
+
+    Args:
+        transitions: Список переходов `(source, target, condition, function, processor)`.
+    """
+
     for source, target, cond, func, proc in transitions:
       self.add_transition(source, target, cond, func, proc)
 
   def clear_transitions(self) -> None:
+    """Удаляет все переходы из всех состояний."""
+
     for state in self.__states.values():
       state.transitions.clear()
 
@@ -349,24 +536,32 @@ class MealyMachine[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def get_current_state_name(self) -> str | None:
+    """Возвращает имя текущего состояния или `None`, если оно не установлено."""
+
     if isinstance(self.__current_state, _UNSET):
       return None
 
     return self.__current_state.name
 
   def get_current_output(self) -> OutputType | None:
+    """Возвращает текущее выходное значение или `None`, если оно не установлено."""
+
     if isinstance(self.__current_output, _UNSET):
       return None
 
     return self.__current_output
 
   def get_current_input(self) -> InputType | None:
+    """Возвращает текущее входное значение или `None`, если оно не установлено."""
+
     if isinstance(self.__current_input, _UNSET):
       return None
 
     return self.__current_input
 
   def is_ready(self) -> bool:
+    """Проверяет, что автомат готов к запуску (установлены состояние, выход и вход)."""
+
     return not (
       isinstance(self.__current_state, _UNSET)
       or isinstance(self.__current_output, _UNSET)
@@ -382,6 +577,15 @@ class MealyMachine[InputType, OutputType]:
     output: OutputType,
     input: InputType,
   ) -> None:
+    """
+    Устанавливает все компоненты текущего состояния.
+
+    Args:
+        state_name: Имя состояния.
+        output: Выходное значение.
+        input: Входное значение.
+    """
+
     self.clear_current_data()
     self.update_current_data(state_name, output, input)
 
@@ -391,11 +595,22 @@ class MealyMachine[InputType, OutputType]:
     output: OutputType | None,
     input: InputType | None,
   ) -> None:
-    # `update_current_data` позволяет обновить только выход или только вход без состояния
-    # Это может привести к неполной готовности
-    # (состояние не установлено, но выход/вход установлены).
-    # Это допустимо, но стоит задокументировать,
-    # что для `is_ready()` требуются все три компонента.
+    """
+    Частично обновляет текущие данные.
+
+    Можно обновить только состояние, только выход, только вход или любую комбинацию.
+
+    Примечание: Для `is_ready()` требуются все три компонента.
+    Если обновить только выход или вход без состояния, автомат не будет готов к запуску.
+
+    Args:
+      state_name: Имя состояния (или `None`, чтобы не обновлять).
+      output: Выходное значение (или `None`, чтобы не обновлять).
+      input: Входное значение (или `None`, чтобы не обновлять).
+
+    Raises:
+      `KeyError`: Если `state_name` передан, но состояние не существует.
+    """
 
     if state_name is not None:
       if state_name not in self.__states:
@@ -410,6 +625,8 @@ class MealyMachine[InputType, OutputType]:
       self.__current_input = input
 
   def clear_current_data(self) -> None:
+    """Сбрасывает текущие данные в состояние 'не установлено'"""
+
     self.__current_state = _UNSET_VAL
     self.__current_output = _UNSET_VAL
     self.__current_input = _UNSET_VAL
@@ -424,6 +641,15 @@ class MealyMachine[InputType, OutputType]:
     function_kwargs: Kwargs | None = None,
     processor_kwargs: Kwargs | None = None,
   ) -> None:
+    """
+    Заменяет все common `kwargs` новыми словарями.
+
+    Args:
+      condition_kwargs: Новый словарь для условий.
+      function_kwargs: Новый словарь для функций выхода.
+      processor_kwargs: Новый словарь для процессоров входа.
+    """
+
     self.clear_common_kwargs()
     self.update_common_kwargs(condition_kwargs, function_kwargs, processor_kwargs)
 
@@ -433,6 +659,15 @@ class MealyMachine[InputType, OutputType]:
     function_kwargs: Kwargs | None = None,
     processor_kwargs: Kwargs | None = None,
   ) -> None:
+    """
+    Обновляет common `kwargs` (добавляет или перезаписывает ключи).
+
+    Args:
+      condition_kwargs: Словарь для обновления условий.
+      function_kwargs: Словарь для обновления функций выхода.
+      processor_kwargs: Словарь для обновления процессоров входа.
+    """
+
     if condition_kwargs is not None:
       self.__condition_kwargs.update(condition_kwargs)
 
@@ -443,6 +678,8 @@ class MealyMachine[InputType, OutputType]:
       self.__processor_kwargs.update(processor_kwargs)
 
   def clear_common_kwargs(self) -> None:
+    """Очищает все common kwargs."""
+
     self.__condition_kwargs = {}
     self.__function_kwargs = {}
     self.__processor_kwargs = {}
@@ -456,6 +693,14 @@ class MealyMachine[InputType, OutputType]:
     stop_condition: MealyConditionProtocol[InputType],
     stop_condition_kwargs: Kwargs | None = None,
   ) -> None:
+    """
+    Устанавливает условие остановки.
+
+    Args:
+      stop_condition: Функция, принимающая вход и возвращающая True для остановки.
+      stop_condition_kwargs: Дополнительные аргументы для `stop_condition`.
+    """
+
     if stop_condition_kwargs is None:
       stop_condition_kwargs = {}
 
@@ -463,6 +708,8 @@ class MealyMachine[InputType, OutputType]:
     self.__stop_condition_kwargs = stop_condition_kwargs
 
   def remove_stop_condition(self) -> None:
+    """Удаляет условие остановки."""
+
     self.__stop_condition = None
     self.__stop_condition_kwargs = {}
 
@@ -470,6 +717,18 @@ class MealyMachine[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def run_once(self) -> MealyStepResult[InputType, OutputType]:
+    """
+    Выполняет один шаг автомата.
+
+    Returns:
+      Результат шага с указанием причины завершения и данными (если успешно).
+
+    Raises:
+      `RuntimeError`: Если текущие данные не установлены.
+      `ValueError`: Если найдено несколько доступных переходов (неоднозначность).
+      `KeyError`: Если целевое состояние не существует.
+    """
+
     if isinstance(self.__current_state, _UNSET):
       raise RuntimeError("Current state not set")
 
@@ -481,10 +740,7 @@ class MealyMachine[InputType, OutputType]:
 
     # IMP: идеологически:
     # if not self.is_ready():
-    #   raise RuntimeError(
-    #     "Machine is not ready. Call set_current_data() or update_current_data() "
-    #     "with valid state, output and input before running."
-    #   )
+    #   raise RuntimeError(...)
     # (но нужно сужение типов, поэтому не используем)
 
     if self.__stop_condition and self.__stop_condition(
@@ -533,6 +789,17 @@ class MealyMachine[InputType, OutputType]:
   def run_all(
     self, clear_before_run: bool = False
   ) -> list[MealyStepResult[InputType, OutputType]]:
+    """
+    Выполняет автомат до остановки (по условию или отсутствию переходов).
+
+    Args:
+      clear_before_run: Если `True`, очищает историю результатов перед запуском.
+                        Если `False`, добавляет новые шаги к существующим.
+
+    Returns:
+      Список успешных шагов выполнения (копия).
+    """
+
     if clear_before_run:
       self.clear_results()
 
@@ -548,22 +815,34 @@ class MealyMachine[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def get_results(self) -> list[MealyStepResult[InputType, OutputType]]:
+    """Возвращает копию списка всех успешных шагов."""
+
     return self.__results.copy()
 
   def get_results_data(self) -> list[MealyStepData[InputType, OutputType]]:
+    """Возвращает копии данных всех успешных шагов."""
+
     return [MealyStepData(step.data.input, step.data.output) for step in self.__results]
 
   def get_results_tuple(self) -> list[tuple[InputType | None, OutputType | None]]:
+    """Возвращает список кортежей `(input, output)` для всех успешных шагов."""
+
     return [(step.data.input, step.data.output) for step in self.__results]
 
   def get_only_results(self) -> list[OutputType | None]:
+    """Возвращает список выходных значений всех успешных шагов."""
+
     return [step.data.output for step in self.__results]
 
   def get_final_result(self) -> OutputType | None:
+    """Возвращает выходное значение последнего успешного шага или `None`."""
+
     if not self.__results:
       return None
 
     return self.__results[-1].data.output
 
   def clear_results(self) -> None:
+    """Очищает историю результатов выполнения."""
+
     self.__results.clear()

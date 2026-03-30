@@ -4,7 +4,11 @@
   "cSpell.words": [
     "dearpygui",
     "pytest",
-    "venv"
+    "venv",
+    "вычисл",
+    "колбэков",
+    "связ",
+    "Сентинель"
   ],
   "ruff.configuration": "ruff.toml",
 }
