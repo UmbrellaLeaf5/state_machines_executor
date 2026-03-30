@@ -1,4 +1,4 @@
-from state_machines.old.state import BinaryDigit, MooreState, StateNameType
+from _legacy.state_machines.state import BinaryDigit, MooreState, StateNameType
 
 
 class MooreMachine:

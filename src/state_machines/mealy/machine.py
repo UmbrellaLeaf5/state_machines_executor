@@ -7,7 +7,7 @@
 import warnings
 from collections.abc import Callable
 
-from state_machines.mealy_state import (
+from src.state_machines.mealy.state import (
   Kwargs,
   MealyConditionProtocol,
   MealyFunctionProtocol,
@@ -15,7 +15,7 @@ from state_machines.mealy_state import (
   MealyState,
   MealyTransition,
 )
-from state_machines.mealy_step import MealyStepData, MealyStepReason, MealyStepResult
+from src.state_machines.mealy.step import MealyStepData, MealyStepReason, MealyStepResult
 
 
 class _UNSET:

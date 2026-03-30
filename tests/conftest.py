@@ -1,7 +1,6 @@
 import pytest
 
-from state_machines.mealy_machine import MealyMachine
-from state_machines.mealy_state import MealyState
+from src.state_machines import MealyMachine, MealyState
 
 
 @pytest.fixture

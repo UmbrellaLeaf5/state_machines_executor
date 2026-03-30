@@ -1,8 +1,6 @@
 import pytest
 
-from state_machines.mealy_machine import MealyMachine
-from state_machines.mealy_state import MealyState
-from state_machines.mealy_step import MealyStepReason
+from src.state_machines import MealyMachine, MealyState, MealyStepReason
 
 
 class TestMealyMachineAPI:

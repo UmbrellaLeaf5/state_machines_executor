@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from state_machines.mealy_machine import MealyMachine
+from src.state_machines import MealyMachine
 
 
 def make_condition(bit: str) -> Callable[[str], bool]:

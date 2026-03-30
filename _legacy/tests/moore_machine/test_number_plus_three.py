@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from state_machines.old.moore_machine import MooreMachine
+from _legacy.state_machines.moore_machine import MooreMachine
 
 
 # Общий словарь состояний для тестов

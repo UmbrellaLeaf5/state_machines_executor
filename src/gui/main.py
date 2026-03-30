@@ -3,7 +3,7 @@ from typing import Literal
 
 import dearpygui.dearpygui as dpg
 
-from gui.colors_tuples import *
+from .colors_tuples import *
 
 
 @dataclass
@@ -113,29 +113,36 @@ class StateMachineEditor:
         self.drag_start_pos = StateMachineEditor.DRAG_INIT_POS
 
 
-# Инициализация DearPyGui
-dpg.create_context()
-editor = StateMachineEditor()
+def main():
+  # Инициализация DearPyGui
+  dpg.create_context()
+  editor = StateMachineEditor()
 
-# Добавляем тестовые данные
-editor.states[1] = State(1, "S_1", 100, 100, "A")
-editor.states[2] = State(2, "S_2", 300, 200, "B")
-editor.transitions.append(Transition(1, 2, "x/y"))
+  # Добавляем тестовые данные
+  editor.states[1] = State(1, "S_1", 100, 100, "A")
+  editor.states[2] = State(2, "S_2", 300, 200, "B")
+  editor.transitions.append(Transition(1, 2, "x/y"))
 
-with dpg.window(label="State Machine Executor", tag="main_window"):
-  with dpg.drawlist(width=800, height=600, tag=StateMachineEditor.SME_EDITOR_NODE):
-    editor.DrawStateMachine()
+  with dpg.window(label="State Machine Executor", tag="main_window"):
+    with dpg.drawlist(width=800, height=600, tag=StateMachineEditor.SME_EDITOR_NODE):
+      editor.DrawStateMachine()
 
-  # Обработчики событий мыши
-  with dpg.handler_registry():
-    dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Left, callback=editor.HandleDrag)
-    dpg.add_mouse_click_handler(
-      button=dpg.mvMouseButton_Left, callback=editor.HandleClick
-    )
+    # Обработчики событий мыши
+    with dpg.handler_registry():
+      dpg.add_mouse_drag_handler(
+        button=dpg.mvMouseButton_Left, callback=editor.HandleDrag
+      )
+      dpg.add_mouse_click_handler(
+        button=dpg.mvMouseButton_Left, callback=editor.HandleClick
+      )
 
-dpg.create_viewport(title="State Machine Executor", width=1000, height=800)
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.set_primary_window("main_window", True)
-dpg.start_dearpygui()
-dpg.destroy_context()
+  dpg.create_viewport(title="State Machine Executor", width=1000, height=800)
+  dpg.setup_dearpygui()
+  dpg.show_viewport()
+  dpg.set_primary_window("main_window", True)
+  dpg.start_dearpygui()
+  dpg.destroy_context()
+
+
+if __name__ == "__main__":
+  main()
