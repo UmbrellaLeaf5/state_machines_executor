@@ -162,7 +162,7 @@ class MealyMachine[InputType, OutputType]:
     if (
       initial_state is not None or initial_output is not None or initial_input is not None
     ):
-      self.update_current_data(initial_state, initial_output, initial_input)
+      self.update_current_data(initial_state, initial_input, initial_output)
 
   # MARK: Helpers
   # --------------------------------------------------------------------------------------
@@ -662,28 +662,28 @@ class MealyMachine[InputType, OutputType]:
   def set_current_data(
     self,
     state_name: str,
-    output: OutputType,
     input: InputType,
+    output: OutputType,
   ) -> None:
     """
     Устанавливает все компоненты текущего состояния.
 
     Args:
         state_name: Имя состояния.
-        output: Выходное значение.
         input: Входное значение.
+        output: Выходное значение.
     """
 
     self.clear_current_data()
-    self.update_current_data(state_name, output, input)
+    self.update_current_data(state_name, input, output)
 
   # --------------------------------------------------------------------------------------
 
   def update_current_data(
     self,
     state_name: str | None,
-    output: OutputType | None,
     input: InputType | None,
+    output: OutputType | None,
   ) -> None:
     """
     Частично обновляет текущие данные.
@@ -695,8 +695,8 @@ class MealyMachine[InputType, OutputType]:
 
     Args:
       state_name: Имя состояния (или `None`, чтобы не обновлять).
-      output: Выходное значение (или `None`, чтобы не обновлять).
       input: Входное значение (или `None`, чтобы не обновлять).
+      output: Выходное значение (или `None`, чтобы не обновлять).
 
     Raises:
       `KeyError`: Если `state_name` передан, но состояние не существует.
