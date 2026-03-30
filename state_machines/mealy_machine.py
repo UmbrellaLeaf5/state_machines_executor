@@ -1,7 +1,4 @@
-from state_machines.mealy_state import MealyConditionProtocol, MealyState
-
-
-Kwargs = dict[str, any]
+from state_machines.mealy_state import Kwargs, MealyConditionProtocol, MealyState
 
 
 class MealyMachine[InputType, ResultType]:
@@ -18,6 +15,7 @@ class MealyMachine[InputType, ResultType]:
   processor_kwargs: Kwargs
 
   stop_condition: MealyConditionProtocol[InputType] | None = None
+  stop_condition_kwargs: Kwargs
 
   def add_state(self, state: MealyState[InputType, ResultType]):
     self.states[state.name] = state
@@ -50,11 +48,13 @@ class MealyMachine[InputType, ResultType]:
     if processor_kwargs is not None:
       self.processor_kwargs = processor_kwargs
 
-  def set_stop_condition(self, stop_condition: MealyConditionProtocol):
+  def set_stop_condition(
+    self, stop_condition: MealyConditionProtocol, stop_condition_kwargs: Kwargs
+  ):
     self.stop_condition = stop_condition
+    self.stop_condition_kwargs = stop_condition_kwargs
 
   def run_once(self) -> tuple[InputType, ResultType] | None:
-
     if self.current_state is None:
       raise RuntimeError("Current state not set")
 
@@ -64,7 +64,9 @@ class MealyMachine[InputType, ResultType]:
     if self.current_input is None:
       raise RuntimeError("Current input not set")
 
-    if self.stop_condition and self.stop_condition(self.current_input):
+    if self.stop_condition and self.stop_condition(
+      self.current_input, self.stop_condition_kwargs
+    ):
       return None
 
     available_transitions = self.current_state.get_available_transitions(
