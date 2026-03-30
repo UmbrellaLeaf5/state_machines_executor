@@ -161,30 +161,45 @@ class MealyMachine[InputType, OutputType]:
     if cleanup_transitions:
       for state in self.__states.values():
         if state_name in state.transitions:
-          del state.transitions[state_name]
+          state.remove_transition(state_name)
 
-    del self.__states[state_name]
+      self.__states[state_name].transitions.clear()
+
+    self.__states.pop(state_name)
 
   def set_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
     self.clear_states()
     self.update_states(states)
 
   def update_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
+    items: list[tuple[str, MealyState[InputType, OutputType]]] = []
+    seen_names: set[str] = set()
+
     for item in states:
       if isinstance(item, str):
-        if item in self.__states:
-          raise ValueError(f"State '{item}' already exists")
-
-        self.__states[item] = MealyState[InputType, OutputType](item, {})
+        name = item
+        state = MealyState[InputType, OutputType](name, {})
 
       elif isinstance(item, MealyState):
-        if item.name in self.__states:
-          raise ValueError(f"State '{item.name}' already exists")
-
-        self.__states[item.name] = item
+        name = item.name
+        state = item
 
       else:
         raise TypeError(f"Expected `str` or `MealyState`, got `{type(item).__name__}`")
+
+      # проверяем дубликаты в списке
+      if name in seen_names:
+        raise ValueError(f"Duplicate state name in input: {name}")
+      seen_names.add(name)
+
+      # проверяем, что состояние не существует в автомате
+      if name in self.__states:
+        raise ValueError(f"State '{name}' already exists")
+
+      items.append((name, state))
+
+    for name, state in items:
+      self.__states[name] = state
 
   def clear_states(self) -> None:
     self.__states.clear()
@@ -223,6 +238,23 @@ class MealyMachine[InputType, OutputType]:
 
     return len(self.__states[state_name].transitions)
 
+  def get_all_transitions(
+    self,
+  ) -> list[
+    tuple[
+      str,
+      str,
+      MealyConditionProtocol[InputType],
+      MealyFunctionProtocol[OutputType],
+      MealyInputProcessorProtocol[InputType],
+    ]
+  ]:
+    return [
+      (state_name, target, trans.condition, trans.function, trans.input_processor)
+      for state_name, state in self.__states.items()
+      for target, trans in state.transitions.items()
+    ]
+
   def get_all_transitions_amount(self) -> int:
     return sum(len(state.transitions) for state in self.__states.values())
 
@@ -236,6 +268,7 @@ class MealyMachine[InputType, OutputType]:
     condition: MealyConditionProtocol[InputType],
     function: MealyFunctionProtocol[OutputType],
     input_processor: MealyInputProcessorProtocol[InputType],
+    replace: bool = False,
   ) -> None:
     # создаём исходное состояние, если его нет
     if source_state not in self.__states:
@@ -254,7 +287,18 @@ class MealyMachine[InputType, OutputType]:
     )
 
     source = self.__states[source_state]
-    source.add_transition(transition)
+
+    if source.has_transition(target_state):
+      if not replace:
+        raise ValueError(
+          f"Transition from '{source_state}' to '{target_state}' already exists. "
+          "Use replace=True to replace it."
+        )
+
+      source.replace_transition(transition)
+
+    else:
+      source.add_transition(transition)
 
   def remove_transition(self, source_state: str, target_state: str) -> None:
     if source_state not in self.__states:
@@ -265,7 +309,7 @@ class MealyMachine[InputType, OutputType]:
     if target_state not in state.transitions:
       raise KeyError(f"Transition from '{source_state}' to '{target_state}' is not found")
 
-    del state.transitions[target_state]
+    state.remove_transition(target_state)
 
   def set_transitions(
     self,
@@ -347,6 +391,12 @@ class MealyMachine[InputType, OutputType]:
     output: OutputType | None,
     input: InputType | None,
   ) -> None:
+    # `update_current_data` позволяет обновить только выход или только вход без состояния
+    # Это может привести к неполной готовности
+    # (состояние не установлено, но выход/вход установлены).
+    # Это допустимо, но стоит задокументировать,
+    # что для `is_ready()` требуются все три компонента.
+
     if state_name is not None:
       if state_name not in self.__states:
         raise KeyError(f"State '{state_name}' not found")

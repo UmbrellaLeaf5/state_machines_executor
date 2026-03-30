@@ -61,18 +61,43 @@ class MealyState[InputType, OutputType]:
 
   transitions: dict[str, MealyTransition[InputType, OutputType]]
 
+  def has_transition(self, target_state: str) -> bool:
+    return target_state in self.transitions
+
   def add_transition(self, transition: MealyTransition[InputType, OutputType]):
     if transition.source_state != self.name:
       raise ValueError(
         f"Invalid transition.source_state: {transition.source_state} != {self.name}"
       )
 
-    if transition.target_state in self.transitions:
+    if self.has_transition(transition.target_state):
       raise ValueError(
         f"Transition from '{self.name}' to '{transition.target_state}' already exists. "
         "Only one transition per target state is allowed."
       )
     self.transitions[transition.target_state] = transition
+
+  def replace_transition(
+    self, transition: MealyTransition[InputType, OutputType]
+  ) -> None:
+    if transition.source_state != self.name:
+      raise ValueError(
+        f"Invalid transition.source_state: {transition.source_state} != {self.name}"
+      )
+
+    if transition.target_state not in self.transitions:
+      raise ValueError(
+        f"Transition from '{self.name}' to '{transition.target_state}' "
+        "does not exist, cannot replace."
+      )
+
+    self.transitions[transition.target_state] = transition
+
+  def remove_transition(self, target_state: str) -> None:
+    if target_state not in self.transitions:
+      raise KeyError(f"Transition from '{self.name}' to '{target_state}' not found")
+
+    self.transitions.pop(target_state)
 
   def get_available_transitions(
     self, input: InputType, condition_kwargs: Kwargs | None = None
