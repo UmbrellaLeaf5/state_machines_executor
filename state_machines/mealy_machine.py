@@ -1,4 +1,13 @@
-from state_machines.mealy_state import Kwargs, MealyConditionProtocol, MealyState
+import warnings
+
+from state_machines.mealy_state import (
+  Kwargs,
+  MealyConditionProtocol,
+  MealyFunctionProtocol,
+  MealyInputProcessorProtocol,
+  MealyState,
+  MealyTransition,
+)
 from state_machines.mealy_step import MealyStepData, MealyStepReason, MealyStepResult
 
 
@@ -8,8 +17,22 @@ class _UNSET:
 
 _UNSET_VAL = _UNSET()
 
+# IMP: идеология методов:
+
+# если есть entity, то есть:
+# 1. def add_entity(self, ...) -> None: ...
+# 2. def remove_entity(self, ...) -> None: ...
+
+# если есть entities, то есть:
+# 1. def set_entities(self, ...) -> None: self.clear_entities(); self.add_entities(...)
+# 2. def update_entities(self, ...) -> None: ...
+# 3. def clear_entities(self, ...) -> None: ...
+
 
 class MealyMachine[InputType, OutputType]:
+  # MARK: Fields
+  # --------------------------------------------------------------------------------------
+
   __states: dict[str, MealyState[InputType, OutputType]]
   __results: list[MealyStepResult[InputType, OutputType]]
 
@@ -24,7 +47,31 @@ class MealyMachine[InputType, OutputType]:
   __stop_condition: MealyConditionProtocol[InputType] | None
   __stop_condition_kwargs: Kwargs
 
-  def __init__(self):
+  # MARK: Init
+  # --------------------------------------------------------------------------------------
+
+  def __init__(
+    self,
+    transitions: list[
+      tuple[
+        str,
+        str,
+        MealyConditionProtocol[InputType],
+        MealyFunctionProtocol[OutputType],
+        MealyInputProcessorProtocol[InputType],
+      ]
+    ]
+    | None = None,
+    *,
+    initial_state: str | None = None,
+    initial_output: OutputType | None = None,
+    initial_input: InputType | None = None,
+    stop_condition: MealyConditionProtocol[InputType] | None = None,
+    stop_condition_kwargs: Kwargs | None = None,
+    condition_kwargs: Kwargs | None = None,
+    function_kwargs: Kwargs | None = None,
+    processor_kwargs: Kwargs | None = None,
+  ) -> None:
     self.__states = {}
     self.__results = []
 
@@ -39,64 +86,262 @@ class MealyMachine[InputType, OutputType]:
     self.__stop_condition = None
     self.__stop_condition_kwargs = {}
 
-  def reset(self):
+    # IMP: тут используются update, а не set, потому что еще ничего не проинициализировано
+
+    if transitions is not None:
+      self.update_transitions(transitions)
+
+    if (
+      condition_kwargs is not None
+      or function_kwargs is not None
+      or processor_kwargs is not None
+    ):
+      self.update_common_kwargs(
+        condition_kwargs=condition_kwargs,
+        function_kwargs=function_kwargs,
+        processor_kwargs=processor_kwargs,
+      )
+
+    if stop_condition is not None:
+      self.add_stop_condition(stop_condition, stop_condition_kwargs)
+
+    if (
+      initial_state is not None or initial_output is not None or initial_input is not None
+    ):
+      self.update_current_data(initial_state, initial_output, initial_input)
+
+  # MARK: Reset Machine
+  # --------------------------------------------------------------------------------------
+
+  def reset_machine(self) -> None:
+    self.clear_current_data()
+    self.__results.clear()
+
+  # MARK: States
+  # --------------------------------------------------------------------------------------
+  # !: entity + entities
+
+  def add_state(self, state: MealyState[InputType, OutputType]) -> None:
+    if state.name in self.__states:
+      raise ValueError(f"State '{state.name}' already exists")
+
+    self.__states[state.name] = state
+
+  def remove_state(self, state_name: str) -> None:
+    if state_name not in self.__states:
+      raise KeyError(f"State '{state_name}' is not found")
+
+    if (
+      not isinstance(self.__current_state, _UNSET)
+      and self.__current_state.name == state_name
+    ):
+      warnings.warn(
+        f"Removing current state '{state_name}', machine reset", UserWarning, stacklevel=2
+      )
+      self.clear_current_data()
+
+    del self.__states[state_name]
+
+  def set_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
+    self.clear_states()
+    self.update_states(states)
+
+  def update_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
+    for item in states:
+      if isinstance(item, str):
+        if item in self.__states:
+          raise ValueError(f"State '{item}' already exists")
+
+        self.__states[item] = MealyState[InputType, OutputType](item, {})
+
+      elif isinstance(item, MealyState):
+        if item.name in self.__states:
+          raise ValueError(f"State '{item.name}' already exists")
+
+        self.__states[item.name] = item
+
+      else:
+        raise TypeError(f"Expected `str` or `MealyState`, got `{type(item).__name__}`")
+
+  def clear_states(self) -> None:
+    self.__states.clear()
+
+  # MARK: Transitions
+  # --------------------------------------------------------------------------------------
+  # !: entity + entities
+
+  def add_transition(
+    self,
+    source_state: str,
+    target_state: str,
+    condition: MealyConditionProtocol[InputType],
+    function: MealyFunctionProtocol[OutputType],
+    input_processor: MealyInputProcessorProtocol[InputType],
+  ) -> None:
+    # создаём исходное состояние, если его нет
+    if source_state not in self.__states:
+      self.__states[source_state] = MealyState[InputType, OutputType](source_state, {})
+
+    # создаём целевое состояние, если его нет
+    if target_state not in self.__states:
+      self.__states[target_state] = MealyState[InputType, OutputType](target_state, {})
+
+    transition = MealyTransition(
+      source_state=source_state,
+      target_state=target_state,
+      condition=condition,
+      function=function,
+      input_processor=input_processor,
+    )
+
+    source = self.__states[source_state]
+    source.add_transition(transition)
+
+  def remove_transition(self, source_state: str, target_state: str) -> None:
+    if source_state not in self.__states:
+      raise KeyError(f"State '{source_state}' is not found")
+
+    state = self.__states[source_state]
+
+    if target_state not in state.transitions:
+      raise KeyError(f"Transition from '{source_state}' to '{target_state}' is not found")
+
+    del state.transitions[target_state]
+
+  def set_transitions(
+    self,
+    transitions: list[
+      tuple[
+        str,
+        str,
+        MealyConditionProtocol[InputType],
+        MealyFunctionProtocol[OutputType],
+        MealyInputProcessorProtocol[InputType],
+      ]
+    ],
+  ) -> None:
+    self.clear_transitions()
+    self.update_transitions(transitions)
+
+  def update_transitions(
+    self,
+    transitions: list[
+      tuple[
+        str,
+        str,
+        MealyConditionProtocol[InputType],
+        MealyFunctionProtocol[OutputType],
+        MealyInputProcessorProtocol[InputType],
+      ]
+    ],
+  ) -> None:
+    for source, target, cond, func, proc in transitions:
+      self.add_transition(source, target, cond, func, proc)
+
+  def clear_transitions(self) -> None:
+    for state in self.__states.values():
+      state.transitions.clear()
+
+  # MARK: Current Data
+  # --------------------------------------------------------------------------------------
+  # !: entities
+
+  def set_current_data(
+    self,
+    state_name: str,
+    output: OutputType,
+    input: InputType,
+  ) -> None:
+    self.clear_current_data()
+    self.update_current_data(state_name, output, input)
+
+  def update_current_data(
+    self,
+    state_name: str | None,
+    output: OutputType | None,
+    input: InputType | None,
+  ) -> None:
+    if state_name is not None:
+      if state_name not in self.__states:
+        raise KeyError(f"State '{state_name}' not found")
+
+      self.__current_state = self.__states[state_name]
+
+    if output is not None:
+      self.__current_output = output
+
+    if input is not None:
+      self.__current_input = input
+
+  def clear_current_data(self) -> None:
     self.__current_state = _UNSET_VAL
     self.__current_output = _UNSET_VAL
     self.__current_input = _UNSET_VAL
 
-    self.__results.clear()
+  # MARK: Common kwargs
+  # --------------------------------------------------------------------------------------
+  # !: entities
 
-  def add_state(self, state: MealyState[InputType, OutputType]):
-    self.__states[state.name] = state
-
-  def set_initial_state(
-    self,
-    state_name: str,
-    initial_output: OutputType,
-    initial_input: InputType,
-  ):
-    if state_name not in self.__states:
-      raise KeyError(f"State '{state_name}' is not found")
-
-    self.__current_state = self.__states[state_name]
-    self.__current_output = initial_output
-    self.__current_input = initial_input
-
-  def set_kwargs(
+  def set_common_kwargs(
     self,
     condition_kwargs: Kwargs | None = None,
     function_kwargs: Kwargs | None = None,
     processor_kwargs: Kwargs | None = None,
-  ):
+  ) -> None:
+    self.clear_common_kwargs()
+    self.update_common_kwargs(condition_kwargs, function_kwargs, processor_kwargs)
+
+  def update_common_kwargs(
+    self,
+    condition_kwargs: Kwargs | None = None,
+    function_kwargs: Kwargs | None = None,
+    processor_kwargs: Kwargs | None = None,
+  ) -> None:
     if condition_kwargs is not None:
-      self.__condition_kwargs = condition_kwargs
+      self.__condition_kwargs.update(condition_kwargs)
 
     if function_kwargs is not None:
-      self.__function_kwargs = function_kwargs
+      self.__function_kwargs.update(function_kwargs)
 
     if processor_kwargs is not None:
-      self.__processor_kwargs = processor_kwargs
+      self.__processor_kwargs.update(processor_kwargs)
 
-  def set_stop_condition(
+  def clear_common_kwargs(self) -> None:
+    self.__condition_kwargs = {}
+    self.__function_kwargs = {}
+    self.__processor_kwargs = {}
+
+  # MARK: Stop condition
+  # --------------------------------------------------------------------------------------
+  # !: entity
+
+  def add_stop_condition(
     self,
     stop_condition: MealyConditionProtocol[InputType],
     stop_condition_kwargs: Kwargs | None = None,
-  ):
+  ) -> None:
     if stop_condition_kwargs is None:
       stop_condition_kwargs = {}
 
     self.__stop_condition = stop_condition
     self.__stop_condition_kwargs = stop_condition_kwargs
 
+  def remove_stop_condition(self) -> None:
+    self.__stop_condition = None
+    self.__stop_condition_kwargs = {}
+
+  # MARK: Run
+  # --------------------------------------------------------------------------------------
+
   def run_once(self) -> MealyStepResult[InputType, OutputType]:
     if isinstance(self.__current_state, _UNSET):
-      raise RuntimeError("Current state is not set")
+      raise RuntimeError("Current state not set")
 
     if isinstance(self.__current_output, _UNSET):
-      raise RuntimeError("Current output is not set")
+      raise RuntimeError("Current output not set")
 
     if isinstance(self.__current_input, _UNSET):
-      raise RuntimeError("Current input is not set")
+      raise RuntimeError("Current input not set")
 
     if self.__stop_condition and self.__stop_condition(
       self.__current_input, **self.__stop_condition_kwargs
@@ -126,7 +371,7 @@ class MealyMachine[InputType, OutputType]:
     target_state = self.__states.get(transition.target_state)
     if target_state is None:
       raise KeyError(
-        f"Target state '{transition.target_state}' is not found in machine states"
+        f"Target state '{transition.target_state}' not found in machine states"
       )
 
     self.__current_state = target_state
@@ -147,6 +392,9 @@ class MealyMachine[InputType, OutputType]:
         break
 
     return self.__results
+
+  # MARK: Get results
+  # --------------------------------------------------------------------------------------
 
   def get_results(self) -> list[MealyStepResult[InputType, OutputType]]:
     return self.__results
