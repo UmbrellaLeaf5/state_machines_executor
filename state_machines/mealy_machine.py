@@ -162,7 +162,7 @@ class MealyMachine[InputType, OutputType]:
     ):
       self.update_current_data(initial_state, initial_output, initial_input)
 
-  # MARK: Reset Machine
+  # MARK: Helpers
   # --------------------------------------------------------------------------------------
 
   def reset_execution(
@@ -184,6 +184,29 @@ class MealyMachine[InputType, OutputType]:
 
     if also_reset_stop_condition:
       self.remove_stop_condition()
+
+  def validate(self) -> None:
+    """
+    Проверяет целостность автомата.
+
+    Raises:
+      `ValueError`: если какое-либо целевое состояние,
+                    указанное в переходах, отсутствует в списке состояний.
+    """
+
+    missing_targets = [
+      (source_name, target_name)
+      for source_name, state in self.__states.items()
+      for target_name in state.transitions
+      if target_name not in self.__states
+    ]
+
+    if missing_targets:
+      msg = "Missing target states:\n" + "\n".join(
+        f"  from '{src}' to '{tgt}'" for src, tgt in missing_targets
+      )
+
+      raise ValueError(msg)
 
   # MARK: States
   # --------------------------------------------------------------------------------------
@@ -243,6 +266,7 @@ class MealyMachine[InputType, OutputType]:
         UserWarning,
         stacklevel=2,
       )
+
       self.clear_current_data()
 
     if cleanup_transitions:
@@ -787,7 +811,9 @@ class MealyMachine[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def run_all(
-    self, clear_before_run: bool = False
+    self,
+    clear_before_run: bool = False,
+    raise_on_error: bool = True,
   ) -> list[MealyStepResult[InputType, OutputType]]:
     """
     Выполняет автомат до остановки (по условию или отсутствию переходов).
@@ -795,16 +821,34 @@ class MealyMachine[InputType, OutputType]:
     Args:
       clear_before_run: Если `True`, очищает историю результатов перед запуском.
                         Если `False`, добавляет новые шаги к существующим.
+      raise_on_error: Если `True`, падает с исключением, проходя по циклу.
+                      Если `False`, завершается на исключении, добавляя в историю
+                      шаг с причиной `EXCEPTION`.
 
     Returns:
-      Список успешных шагов выполнения (копия).
+      Список шагов выполнения (успешные и, возможно, шаг с исключением).
     """
+
+    self.validate()
 
     if clear_before_run:
       self.clear_results()
 
     while True:
-      step_result = self.run_once()
+      try:
+        step_result = self.run_once()
+
+      except Exception as e:
+        if raise_on_error:
+          raise e
+
+        error_step = MealyStepResult(
+          reason=MealyStepReason.EXCEPTION,
+          exception=e,
+        )
+
+        self.__results.append(error_step)
+        break
 
       if step_result.reason != MealyStepReason.SUCCESS:
         break
@@ -815,32 +859,33 @@ class MealyMachine[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def get_results(self) -> list[MealyStepResult[InputType, OutputType]]:
-    """Возвращает копию списка всех успешных шагов."""
+    """Возвращает копию списка всех шагов."""
 
     return self.__results.copy()
 
   def get_results_data(self) -> list[MealyStepData[InputType, OutputType]]:
-    """Возвращает копии данных всех успешных шагов."""
+    """Возвращает копии данных всех шагов."""
 
     return [MealyStepData(step.data.input, step.data.output) for step in self.__results]
 
   def get_results_tuple(self) -> list[tuple[InputType | None, OutputType | None]]:
-    """Возвращает список кортежей `(input, output)` для всех успешных шагов."""
+    """Возвращает список кортежей `(input, output)` для всех шагов."""
 
     return [(step.data.input, step.data.output) for step in self.__results]
 
   def get_only_results(self) -> list[OutputType | None]:
-    """Возвращает список выходных значений всех успешных шагов."""
+    """Возвращает список выходных значений для всех шагов."""
 
     return [step.data.output for step in self.__results]
 
   def get_final_result(self) -> OutputType | None:
     """Возвращает выходное значение последнего успешного шага или `None`."""
 
-    if not self.__results:
-      return None
+    for step in reversed(self.__results):
+      if step.reason == MealyStepReason.SUCCESS:
+        return step.data.output
 
-    return self.__results[-1].data.output
+    return None
 
   def clear_results(self) -> None:
     """Очищает историю результатов выполнения."""

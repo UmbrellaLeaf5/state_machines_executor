@@ -18,15 +18,16 @@ class MealyConditionProtocol[InputType](Protocol):
   Протокол для функции-условия перехода.
 
   Принимает входное значение и возвращает `True`, если переход может быть выполнен.
-  Доп. `**kwargs` позволяют передавать параметры через kwargs автомата.
+  Доп.`*args` и `**kwargs` позволяют передавать параметры через kwargs автомата.
   """
 
-  def __call__(self, input: InputType, **kwargs: Any) -> bool:
+  def __call__(self, input: InputType, *args: Any, **kwargs: Any) -> bool:
     """
     Проверяет условие перехода.
 
     Args:
       input: Входное значение.
+      *args: Дополнительные позиционные аргументы.
       **kwargs: Дополнительные именованные аргументы.
 
     Returns:
@@ -42,12 +43,15 @@ class MealyFunctionProtocol[OutputType](Protocol):
   Принимает предыдущий выход и возвращает новый выход.
   """
 
-  def __call__(self, previous_output: OutputType, **kwargs: Any) -> OutputType:
+  def __call__(
+    self, previous_output: OutputType, *args: Any, **kwargs: Any
+  ) -> OutputType:
     """
     Вычисляет новое выходное значение.
 
     Args:
       previous_output: Выходное значение предыдущего шага.
+      *args: Дополнительные позиционные аргументы.
       **kwargs: Дополнительные именованные аргументы.
 
     Returns:
@@ -64,12 +68,13 @@ class MealyInputProcessorProtocol[InputType](Protocol):
   обработанное входное значение для следующего шага.
   """
 
-  def __call__(self, input: InputType, **kwargs: Any) -> InputType:
+  def __call__(self, input: InputType, *args: Any, **kwargs: Any) -> InputType:
     """
     Обрабатывает входное значение.
 
     Args:
       input: Входное значение.
+      *args: Дополнительные позиционные аргументы.
       **kwargs: Дополнительные именованные аргументы.
 
     Returns:

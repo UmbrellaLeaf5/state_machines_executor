@@ -14,6 +14,7 @@ class MealyStepReason(Enum):
   SUCCESS = auto()  # успешный переход
   STOP_CONDITION = auto()  # останов по условию
   NO_TRANSITION = auto()  # нет доступных переходов
+  EXCEPTION = auto()  # исключение при выполнении
 
 
 @dataclass
@@ -58,10 +59,12 @@ class MealyStepResult[InputType, OutputType]:
   Attributes:
       reason: Причина завершения шага.
       data: Данные шага (заполнены только при `SUCCESS`).
+      exception: Исключение, если `reason == EXCEPTION`.
   """
 
   reason: MealyStepReason
   data: MealyStepData[InputType, OutputType]
+  exception: Exception | None = None
 
   def __init__(
     self,
@@ -69,6 +72,7 @@ class MealyStepResult[InputType, OutputType]:
     data: tuple[InputType | None, OutputType | None]
     | MealyStepData[InputType, OutputType]
     | None = None,
+    exception: Exception | None = None,
   ):
     """
     Инициализирует результат шага.
@@ -76,9 +80,11 @@ class MealyStepResult[InputType, OutputType]:
     Args:
         reason: Причина завершения.
         data: Данные шага (кортеж, объект `MealyStepData` или `None`).
+        exception: Исключение (только при `EXCEPTION`).
     """
 
     self.reason = reason
+    self.exception = exception
 
     if data is None:
       self.data = MealyStepData[InputType, OutputType]()
