@@ -7,90 +7,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol
 
-
-Kwargs = dict[str, Any]
-
-
-# MARK: Protocols
-# --------------------------------------------------------------------------------------
-
-
-class MealyConditionProtocol[InputType](Protocol):
-  """
-  Протокол для функции-условия перехода.
-
-  Принимает входное значение и возвращает `True`, если переход может быть выполнен.
-  Доп.`*args` и `**kwargs` позволяют передавать параметры через kwargs автомата.
-  """
-
-  def __call__(self, input: InputType, *args: Any, **kwargs: Any) -> bool:
-    """
-    Проверяет условие перехода.
-
-    Args:
-      input: Входное значение.
-      *args: Дополнительные позиционные аргументы.
-      **kwargs: Дополнительные именованные аргументы.
-
-    Returns:
-      `True` если условие выполнено, иначе `False`.
-    """
-    ...
-
-
-# --------------------------------------------------------------------------------------
-
-
-class MealyFunctionProtocol[OutputType](Protocol):
-  """
-  Протокол для функции, вычисляющей выходное значение.
-
-  Принимает предыдущий выход и возвращает новый выход.
-  """
-
-  def __call__(
-    self, previous_output: OutputType, *args: Any, **kwargs: Any
-  ) -> OutputType:
-    """
-    Вычисляет новое выходное значение.
-
-    Args:
-      previous_output: Выходное значение предыдущего шага.
-      *args: Дополнительные позиционные аргументы.
-      **kwargs: Дополнительные именованные аргументы.
-
-    Returns:
-      Новое выходное значение.
-    """
-    ...
-
-
-# --------------------------------------------------------------------------------------
-
-
-class MealyInputProcessorProtocol[InputType](Protocol):
-  """
-  Протокол для функции обработки входа.
-
-  Принимает входное значение и возвращает
-  обработанное входное значение для следующего шага.
-  """
-
-  def __call__(self, input: InputType, *args: Any, **kwargs: Any) -> InputType:
-    """
-    Обрабатывает входное значение.
-
-    Args:
-      input: Входное значение.
-      *args: Дополнительные позиционные аргументы.
-      **kwargs: Дополнительные именованные аргументы.
-
-    Returns:
-      Обработанное входное значение.
-    """
-    ...
+from ..utils import (
+  InputProcessorProtocol,
+  Kwargs,
+  OutputFunctionProtocol,
+  TransConditionProtocol,
+)
 
 
 # MARK: MealyTransition
@@ -108,17 +31,17 @@ class MealyTransition[InputType, OutputType]:
   Attributes:
     source_state: Имя исходного состояния.
     target_state: Имя целевого состояния.
-    condition: Функция-условие перехода.
-    function: Функция вычисления выходного значения.
+    trans_condition: Функция-условие перехода.
+    output_function: Функция вычисления выходного значения.
     input_processor: Функция обработки входа.
   """
 
   source_state: str
   target_state: str
 
-  condition: MealyConditionProtocol[InputType]
-  function: MealyFunctionProtocol[OutputType]
-  input_processor: MealyInputProcessorProtocol[InputType]
+  trans_condition: TransConditionProtocol[InputType]
+  output_function: OutputFunctionProtocol[OutputType]
+  input_processor: InputProcessorProtocol[InputType]
 
   # --------------------------------------------------------------------------------------
 
@@ -139,7 +62,7 @@ class MealyTransition[InputType, OutputType]:
     if condition_kwargs is None:
       condition_kwargs = {}
 
-    return self.condition(input, **condition_kwargs)
+    return self.trans_condition(input, **condition_kwargs)
 
   # --------------------------------------------------------------------------------------
 
@@ -160,7 +83,7 @@ class MealyTransition[InputType, OutputType]:
     if function_kwargs is None:
       function_kwargs = {}
 
-    return self.function(previous_output, **function_kwargs)
+    return self.output_function(previous_output, **function_kwargs)
 
   # --------------------------------------------------------------------------------------
 

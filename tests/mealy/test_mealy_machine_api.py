@@ -134,15 +134,15 @@ class TestMealyMachineAPI:
     machine.add_transition(
       "A",
       "B",
-      condition=lambda input: True,
-      function=lambda previous_output: previous_output,
+      trans_condition=lambda input: True,
+      output_function=lambda previous_output: previous_output,
       input_processor=lambda input: input,
     )
     machine.add_transition(
       "B",
       "A",
-      condition=lambda input: True,
-      function=lambda previous_output: previous_output,
+      trans_condition=lambda input: True,
+      output_function=lambda previous_output: previous_output,
       input_processor=lambda input: input,
     )
     machine.update_current_data("A", "", "0")

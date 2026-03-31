@@ -7,22 +7,19 @@
 
 import warnings
 
-from src.state_machines.mealy.state import (
+from ..utils import (
+  UNSET,
+  UNSET_VAL,
+  InputProcessorProtocol,
   Kwargs,
-  MealyConditionProtocol,
-  MealyFunctionProtocol,
-  MealyInputProcessorProtocol,
+  OutputFunctionProtocol,
+  TransConditionProtocol,
+)
+from .state import (
   MealyState,
   MealyTransition,
 )
-from src.state_machines.mealy.step import MealyStepData, MealyStepReason, MealyStepResult
-
-
-class _UNSET:
-  """Сентинель для обозначения 'значение не установлено'."""
-
-
-_UNSET_VAL = _UNSET()
+from .step import MealyStepData, MealyStepReason, MealyStepResult
 
 
 # IMP: идеология методов:
@@ -39,7 +36,7 @@ _UNSET_VAL = _UNSET()
 
 class MealyEntityApi[InputType, OutputType]:
   """
-  Класс, предоставляющий API для управления сущностями автомата Мили.
+  Миксин, предоставляющий API для управления сущностями автомата Мили.
   """
 
   # MARK: Fields
@@ -48,15 +45,15 @@ class MealyEntityApi[InputType, OutputType]:
   _states: dict[str, MealyState[InputType, OutputType]]
   _results: list[MealyStepResult[InputType, OutputType]]
 
-  _current_state: MealyState[InputType, OutputType] | _UNSET
-  _current_output: OutputType | _UNSET
-  _current_input: InputType | _UNSET
+  _current_state: MealyState[InputType, OutputType] | UNSET
+  _current_output: OutputType | UNSET
+  _current_input: InputType | UNSET
 
   _condition_kwargs: Kwargs
   _function_kwargs: Kwargs
   _processor_kwargs: Kwargs
 
-  _stop_condition: MealyConditionProtocol[InputType] | None
+  _stop_condition: TransConditionProtocol[InputType] | None
   _stop_condition_kwargs: Kwargs
 
   # MARK: Init
@@ -68,16 +65,16 @@ class MealyEntityApi[InputType, OutputType]:
       tuple[
         str,
         str,
-        MealyConditionProtocol[InputType],
-        MealyFunctionProtocol[OutputType],
-        MealyInputProcessorProtocol[InputType],
+        TransConditionProtocol[InputType],
+        OutputFunctionProtocol[OutputType],
+        InputProcessorProtocol[InputType],
       ]
     ]
     | None = None,
     initial_state: str | None = None,
     initial_output: OutputType | None = None,
     initial_input: InputType | None = None,
-    stop_condition: MealyConditionProtocol[InputType] | None = None,
+    stop_condition: TransConditionProtocol[InputType] | None = None,
     stop_condition_kwargs: Kwargs | None = None,
     condition_kwargs: Kwargs | None = None,
     function_kwargs: Kwargs | None = None,
@@ -90,23 +87,26 @@ class MealyEntityApi[InputType, OutputType]:
     через соответствующие методы.
 
     Args:
-      transitions: Список переходов. Каждый переход - кортеж из пяти элементов:
-          (source_state, target_state, condition, function, processor).
-          - source_state: имя исходного состояния
-          - target_state: имя целевого состояния
-          - condition: функция-условие (арг.: input, возвращает bool)
-          - function: функция вычисл. выхода (арг.: previous_output, возвращает output)
-          - processor: функция обработки входа (арг.: input, возвращает новый input)
+      transitions: Список переходов. Каждый переход - кортеж из пяти элементов: (
+        `source_state`, `target_state`, `condition`, `function`, `processor`).
+          - `source_state`: имя исходного состояния
+          - `target_state`: имя целевого состояния
+          - `condition`: функция-условие, определяющая, можно ли выполнить переход
+          - `function`: функция вычисления выхода
+          - `processor`: функция обработки входа
 
-      initial_state: Имя начального состояния. Если указан, должны быть также указаны
+      initial_state: Имя начального состояния.
+        Если указан, автомат будет готов к запуску после установки
         `initial_output` и `initial_input`.
 
       initial_output: Нач. выходное значение. Используется вместе с `initial_state`.
 
       initial_input: Начальное входное значение. Используется вместе с `initial_state`.
 
-      stop_condition: Функция-условие остановки. Вызывается перед каждым шагом,
-        принимает текущий вход и возвращает `True` для остановки.
+      stop_condition: Функция-условие остановки.
+        Вызывается перед каждым шагом выполнения.
+        Принимает текущий вход и возвращает `True` для остановки автомата.
+        Результат шага в этом случае будет иметь `reason = STOP_CONDITION`.
 
       stop_condition_kwargs: Дополнительные именованные аргументы для `stop_condition`.
         Передаются в функцию как `**kwargs`.
@@ -124,9 +124,9 @@ class MealyEntityApi[InputType, OutputType]:
     self._states = {}
     self._results = []
 
-    self._current_state = _UNSET_VAL
-    self._current_output = _UNSET_VAL
-    self._current_input = _UNSET_VAL
+    self._current_state = UNSET_VAL
+    self._current_output = UNSET_VAL
+    self._current_input = UNSET_VAL
 
     self._condition_kwargs = {}
     self._function_kwargs = {}
@@ -167,13 +167,15 @@ class MealyEntityApi[InputType, OutputType]:
 
     return list(self._states.keys())
 
+  # --------------------------------------------------------------------------------------
+
   def get_states_amount(self) -> int:
     """Возвращает количество состояний."""
 
     return len(self._states)
 
   # --------------------------------------------------------------------------------------
-  # !: entity + entities
+  # !: entity
 
   def add_state(self, state: MealyState[InputType, OutputType]) -> None:
     """
@@ -211,7 +213,7 @@ class MealyEntityApi[InputType, OutputType]:
       raise KeyError(f"State '{state_name}' is not found")
 
     if (
-      not isinstance(self._current_state, _UNSET)
+      not isinstance(self._current_state, UNSET)
       and self._current_state.name == state_name
     ):
       warnings.warn(
@@ -232,13 +234,20 @@ class MealyEntityApi[InputType, OutputType]:
     self._states.pop(state_name)
 
   # --------------------------------------------------------------------------------------
+  # !: entities
 
   def set_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
     """
     Заменяет все состояния новыми.
 
     Args:
-      states: Список имён (строк) или объектов `MealyState`.
+      states: Список состояний. Каждый элемент может быть:
+        - строкой (`state_name`)
+        - объектом `MealyState`
+
+    Raises:
+      `TypeError`: При неверном типе элемента.
+      `ValueError`: При дубликате имени в списке.
     """
 
     self.clear_states()
@@ -251,14 +260,16 @@ class MealyEntityApi[InputType, OutputType]:
     Добавляет несколько состояний атомарно.
 
     Args:
-      states: Список имён (строк) или объектов `MealyState`.
+      states: Список состояний. Каждый элемент может быть:
+        - строкой (`state_name`)
+        - объектом `MealyState`
 
     Raises:
       `TypeError`: При неверном типе элемента.
-      `ValueError`: При дубликате имени в списке или если состояние уже существует.
+      `ValueError`: При дубликате имени в списке.
     """
 
-    items: list[tuple[str, MealyState[InputType, OutputType]]] = []
+    items: list[MealyState[InputType, OutputType]] = []
     seen_names: set[str] = set()
 
     for item in states:
@@ -276,16 +287,17 @@ class MealyEntityApi[InputType, OutputType]:
       # проверяем дубликаты в списке
       if name in seen_names:
         raise ValueError(f"Duplicate state name in input: {name}")
+
       seen_names.add(name)
 
       # проверяем, что состояние не существует в автомате
       if name in self._states:
         raise ValueError(f"State '{name}' already exists")
 
-      items.append((name, state))
+      items.append(state)
 
-    for name, state in items:
-      self._states[name] = state
+    for state in items:
+      self._states[state.name] = state
 
   # --------------------------------------------------------------------------------------
 
@@ -302,9 +314,9 @@ class MealyEntityApi[InputType, OutputType]:
   ) -> list[
     tuple[
       str,
-      MealyConditionProtocol[InputType],
-      MealyFunctionProtocol[OutputType],
-      MealyInputProcessorProtocol[InputType],
+      TransConditionProtocol[InputType],
+      OutputFunctionProtocol[OutputType],
+      InputProcessorProtocol[InputType],
     ]
   ]:
     """
@@ -328,8 +340,8 @@ class MealyEntityApi[InputType, OutputType]:
     return [
       (
         target,
-        trans.condition,
-        trans.function,
+        trans.trans_condition,
+        trans.output_function,
         trans.input_processor,
       )
       for target, trans in state.transitions.items()
@@ -364,9 +376,9 @@ class MealyEntityApi[InputType, OutputType]:
     tuple[
       str,
       str,
-      MealyConditionProtocol[InputType],
-      MealyFunctionProtocol[OutputType],
-      MealyInputProcessorProtocol[InputType],
+      TransConditionProtocol[InputType],
+      OutputFunctionProtocol[OutputType],
+      InputProcessorProtocol[InputType],
     ]
   ]:
     """
@@ -377,7 +389,13 @@ class MealyEntityApi[InputType, OutputType]:
     """
 
     return [
-      (state_name, target, trans.condition, trans.function, trans.input_processor)
+      (
+        state_name,
+        target,
+        trans.trans_condition,
+        trans.output_function,
+        trans.input_processor,
+      )
       for state_name, state in self._states.items()
       for target, trans in state.transitions.items()
     ]
@@ -390,15 +408,15 @@ class MealyEntityApi[InputType, OutputType]:
     return sum(len(state.transitions) for state in self._states.values())
 
   # --------------------------------------------------------------------------------------
-  # !: entity + entities
+  # !: entity
 
   def add_transition(
     self,
     source_state: str,
     target_state: str,
-    condition: MealyConditionProtocol[InputType],
-    function: MealyFunctionProtocol[OutputType],
-    input_processor: MealyInputProcessorProtocol[InputType],
+    trans_condition: TransConditionProtocol[InputType],
+    output_function: OutputFunctionProtocol[OutputType],
+    input_processor: InputProcessorProtocol[InputType],
     replace: bool = False,
   ) -> None:
     """
@@ -409,14 +427,14 @@ class MealyEntityApi[InputType, OutputType]:
     Args:
       source_state: Имя исходного состояния.
       target_state: Имя целевого состояния.
-      condition: Функция-условие.
-      function: Функция вычисления выхода.
+      trans_condition: Функция-условие.
+      output_function: Функция вычисления выхода.
       input_processor: Функция обработки входа.
       replace: Если `True` и переход уже существует, он заменяется.
-               Если `False` и переход существует, вызывается `ValueError`.
+        Если `False` и переход существует, вызывается `ValueError`.
 
     Raises:
-      ValueError: Если переход уже существует и `replace=False`.
+      `ValueError`: Если переход уже существует и `replace=False`.
     """
 
     # создаём исходное состояние, если его нет
@@ -430,8 +448,8 @@ class MealyEntityApi[InputType, OutputType]:
     transition = MealyTransition(
       source_state=source_state,
       target_state=target_state,
-      condition=condition,
-      function=function,
+      trans_condition=trans_condition,
+      output_function=output_function,
       input_processor=input_processor,
     )
 
@@ -456,11 +474,11 @@ class MealyEntityApi[InputType, OutputType]:
     Удаляет переход.
 
     Args:
-        source_state: Имя исходного состояния.
-        target_state: Имя целевого состояния.
+      source_state: Имя исходного состояния.
+      target_state: Имя целевого состояния.
 
     Raises:
-        `KeyError`: Если исходное состояние не существует или переход не найден.
+      `KeyError`: Если исходное состояние не существует или переход не найден.
     """
 
     if source_state not in self._states:
@@ -474,6 +492,7 @@ class MealyEntityApi[InputType, OutputType]:
     state.remove_transition(target_state)
 
   # --------------------------------------------------------------------------------------
+  # !: entities
 
   def set_transitions(
     self,
@@ -481,9 +500,9 @@ class MealyEntityApi[InputType, OutputType]:
       tuple[
         str,
         str,
-        MealyConditionProtocol[InputType],
-        MealyFunctionProtocol[OutputType],
-        MealyInputProcessorProtocol[InputType],
+        TransConditionProtocol[InputType],
+        OutputFunctionProtocol[OutputType],
+        InputProcessorProtocol[InputType],
       ]
     ],
   ) -> None:
@@ -491,7 +510,7 @@ class MealyEntityApi[InputType, OutputType]:
     Заменяет все переходы новыми.
 
     Args:
-        transitions: Список переходов `(source, target, condition, function, processor)`.
+      transitions: Список переходов `(source, target, condition, function, processor)`.
     """
 
     self.clear_transitions()
@@ -505,9 +524,9 @@ class MealyEntityApi[InputType, OutputType]:
       tuple[
         str,
         str,
-        MealyConditionProtocol[InputType],
-        MealyFunctionProtocol[OutputType],
-        MealyInputProcessorProtocol[InputType],
+        TransConditionProtocol[InputType],
+        OutputFunctionProtocol[OutputType],
+        InputProcessorProtocol[InputType],
       ]
     ],
   ) -> None:
@@ -515,7 +534,7 @@ class MealyEntityApi[InputType, OutputType]:
     Добавляет несколько переходов.
 
     Args:
-        transitions: Список переходов `(source, target, condition, function, processor)`.
+      transitions: Список переходов `(source, target, condition, function, processor)`.
     """
 
     for source, target, cond, func, proc in transitions:
@@ -535,34 +554,40 @@ class MealyEntityApi[InputType, OutputType]:
   def get_current_state_name(self) -> str | None:
     """Возвращает имя текущего состояния или `None`, если оно не установлено."""
 
-    if isinstance(self._current_state, _UNSET):
+    if isinstance(self._current_state, UNSET):
       return None
 
     return self._current_state.name
 
+  # --------------------------------------------------------------------------------------
+
   def get_current_output(self) -> OutputType | None:
     """Возвращает текущее выходное значение или `None`, если оно не установлено."""
 
-    if isinstance(self._current_output, _UNSET):
+    if isinstance(self._current_output, UNSET):
       return None
 
     return self._current_output
 
+  # --------------------------------------------------------------------------------------
+
   def get_current_input(self) -> InputType | None:
     """Возвращает текущее входное значение или `None`, если оно не установлено."""
 
-    if isinstance(self._current_input, _UNSET):
+    if isinstance(self._current_input, UNSET):
       return None
 
     return self._current_input
+
+  # --------------------------------------------------------------------------------------
 
   def is_ready(self) -> bool:
     """Проверяет, что автомат готов к запуску (установлены состояние, выход и вход)."""
 
     return not (
-      isinstance(self._current_state, _UNSET)
-      or isinstance(self._current_output, _UNSET)
-      or isinstance(self._current_input, _UNSET)
+      isinstance(self._current_state, UNSET)
+      or isinstance(self._current_output, UNSET)
+      or isinstance(self._current_input, UNSET)
     )
 
   # --------------------------------------------------------------------------------------
@@ -578,9 +603,9 @@ class MealyEntityApi[InputType, OutputType]:
     Устанавливает все компоненты текущего состояния.
 
     Args:
-        state_name: Имя состояния.
-        input: Входное значение.
-        output: Выходное значение.
+      state_name: Имя состояния.
+      input: Входное значение.
+      output: Выходное значение.
     """
 
     self.clear_current_data()
@@ -590,9 +615,9 @@ class MealyEntityApi[InputType, OutputType]:
 
   def update_current_data(
     self,
-    state_name: str | None,
-    input: InputType | None,
-    output: OutputType | None,
+    state_name: str | None = None,
+    input: InputType | None = None,
+    output: OutputType | None = None,
   ) -> None:
     """
     Частично обновляет текущие данные.
@@ -628,9 +653,9 @@ class MealyEntityApi[InputType, OutputType]:
   def clear_current_data(self) -> None:
     """Сбрасывает текущие данные в состояние 'не установлено'"""
 
-    self._current_state = _UNSET_VAL
-    self._current_output = _UNSET_VAL
-    self._current_input = _UNSET_VAL
+    self._current_state = UNSET_VAL
+    self._current_output = UNSET_VAL
+    self._current_input = UNSET_VAL
 
   # MARK: Common kwargs
   # --------------------------------------------------------------------------------------
@@ -683,7 +708,7 @@ class MealyEntityApi[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   def clear_common_kwargs(self) -> None:
-    """Очищает все common kwargs."""
+    """Очищает все `common kwargs`."""
 
     self._condition_kwargs = {}
     self._function_kwargs = {}
@@ -695,7 +720,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   def add_stop_condition(
     self,
-    stop_condition: MealyConditionProtocol[InputType],
+    stop_condition: TransConditionProtocol[InputType],
     stop_condition_kwargs: Kwargs | None = None,
   ) -> None:
     """
@@ -728,6 +753,8 @@ class MealyEntityApi[InputType, OutputType]:
 
     return self._results.copy()
 
+  # --------------------------------------------------------------------------------------
+
   def get_results_data(self) -> list[MealyStepData[InputType, OutputType]]:
     """Возвращает копии данных всех шагов."""
 
@@ -735,15 +762,21 @@ class MealyEntityApi[InputType, OutputType]:
       MealyStepData(step.data.processed_input, step.data.output) for step in self._results
     ]
 
+  # --------------------------------------------------------------------------------------
+
   def get_results_tuple(self) -> list[tuple[InputType | None, OutputType | None]]:
     """Возвращает список кортежей `(input, output)` для всех шагов."""
 
     return [(step.data.processed_input, step.data.output) for step in self._results]
 
+  # --------------------------------------------------------------------------------------
+
   def get_only_results(self) -> list[OutputType | None]:
     """Возвращает список выходных значений для всех шагов."""
 
     return [step.data.output for step in self._results]
+
+  # --------------------------------------------------------------------------------------
 
   def get_final_result(self) -> OutputType | None:
     """Возвращает выходное значение последнего успешного шага или `None`."""
@@ -753,6 +786,8 @@ class MealyEntityApi[InputType, OutputType]:
         return step.data.output
 
     return None
+
+  # --------------------------------------------------------------------------------------
 
   def clear_results(self) -> None:
     """Очищает историю результатов выполнения."""

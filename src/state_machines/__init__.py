@@ -1,6 +1,21 @@
-from .mealy.machine import MealyMachine
-from .mealy.state import MealyState
-from .mealy.step import MealyStepData, MealyStepReason, MealyStepResult
+from .mealy import (
+  MealyMachine,
+  MealyState,
+  MealyStepData,
+  MealyStepReason,
+  MealyStepResult,
+  MealyTransition,
+)
+
+# --------------------------------------------------------------------------------------
+from .moore import (
+  MooreMachine,
+  MooreState,
+  MooreStepData,
+  MooreStepReason,
+  MooreStepResult,
+  MooreTransition,
+)
 
 
 __all__ = [
@@ -9,4 +24,12 @@ __all__ = [
   "MealyStepData",
   "MealyStepReason",
   "MealyStepResult",
+  "MealyTransition",
+  # --------------------------------------------------------------------------------------
+  "MooreMachine",
+  "MooreState",
+  "MooreStepData",
+  "MooreStepReason",
+  "MooreStepResult",
+  "MooreTransition",
 ]

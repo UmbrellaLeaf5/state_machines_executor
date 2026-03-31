@@ -7,9 +7,10 @@
 import warnings
 from collections.abc import Callable
 
-from src.state_machines.mealy.state import MealyTransition
-from src.state_machines.mealy.step import MealyStepData, MealyStepReason, MealyStepResult
-from state_machines.mealy._entity_api import _UNSET, MealyEntityApi
+from ..utils import UNSET
+from ._entity_api import MealyEntityApi
+from .state import MealyTransition
+from .step import MealyStepData, MealyStepReason, MealyStepResult
 
 
 class MealyMachine[InputType, OutputType](
@@ -19,7 +20,7 @@ class MealyMachine[InputType, OutputType](
   """
   Автомат Мили.
 
-  Позволяет задать состояния, переходы, выполнять шаги и получать результаты.
+  Позволяет задать состояния, переходы, выполнять шаги на переходах и получать результаты.
   """
 
   # MARK: Helpers
@@ -53,7 +54,7 @@ class MealyMachine[InputType, OutputType](
 
     Raises:
       `ValueError`: если какое-либо целевое состояние,
-                    указанное в переходах, отсутствует в списке состояний.
+        указанное в переходах, отсутствует в списке состояний.
     """
 
     missing_targets = [
@@ -70,6 +71,8 @@ class MealyMachine[InputType, OutputType](
 
       raise ValueError(msg)
 
+  # --------------------------------------------------------------------------------------
+
   def _format_ambiguous_error(
     self, available_transitions: list[MealyTransition[InputType, OutputType]]
   ) -> str:
@@ -84,7 +87,7 @@ class MealyMachine[InputType, OutputType](
       входе, выходе, общих kwargs и каждом из конфликтующих переходов.
     """
 
-    if isinstance(self._current_state, _UNSET):
+    if isinstance(self._current_state, UNSET):
       raise RuntimeError("Current state not set")
 
     def _get_name(obj: Callable) -> str:
@@ -92,8 +95,8 @@ class MealyMachine[InputType, OutputType](
 
     transitions_desc = [
       f"  to '{t.target_state}' with:\n"
-      f"    condition: '{_get_name(t.condition)}'\n"
-      f"    function: '{_get_name(t.function)}'\n"
+      f"    condition: '{_get_name(t.trans_condition)}'\n"
+      f"    function: '{_get_name(t.output_function)}'\n"
       f"    processor: '{_get_name(t.input_processor)}'"
       for t in available_transitions
     ]
@@ -123,13 +126,13 @@ class MealyMachine[InputType, OutputType](
       `KeyError`: Если целевое состояние не существует.
     """
 
-    if isinstance(self._current_state, _UNSET):
+    if isinstance(self._current_state, UNSET):
       raise RuntimeError("Current state not set")
 
-    if isinstance(self._current_output, _UNSET):
+    if isinstance(self._current_output, UNSET):
       raise RuntimeError("Current output not set")
 
-    if isinstance(self._current_input, _UNSET):
+    if isinstance(self._current_input, UNSET):
       raise RuntimeError("Current input not set")
 
     # IMP: идеологически:
@@ -198,14 +201,14 @@ class MealyMachine[InputType, OutputType](
 
     Args:
       clear_before_run: Если `True`, очищает историю результатов перед запуском.
-                        Если `False`, добавляет новые шаги к существующим.
+        Если `False`, добавляет новые шаги к существующим.
       raise_on_error: Если `True`, падает с исключением, проходя по циклу.
-                      Если `False`, завершается на исключении, добавляя в историю
-                      шаг с причиной `EXCEPTION`
-                      (c ошибками валидации графа всё равно будет падать!).
+        Если `False`, завершается на исключении, добавляя в историю
+        шаг с причиной `EXCEPTION`
+        (c ошибками валидации графа всё равно будет падать!).
 
     Returns:
-      Список шагов выполнения (успешные и, возможно, шаг с исключением).
+      Список шагов выполнения.
     """
 
     self.validate()
