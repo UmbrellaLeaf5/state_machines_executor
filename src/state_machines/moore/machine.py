@@ -7,10 +7,9 @@
 import warnings
 from collections.abc import Callable
 
-from ..utils import UNSET
+from ..utils import UNSET, StepData, StepReason, StepResult
 from ._entity_api import MooreEntityApi
 from .state import MooreTransition
-from .step import MooreStepData, MooreStepReason, MooreStepResult
 
 
 class MooreMachine[InputType, OutputType](
@@ -126,7 +125,7 @@ class MooreMachine[InputType, OutputType](
   # MARK: Run
   # --------------------------------------------------------------------------------------
 
-  def run_once(self) -> MooreStepResult[InputType, OutputType]:
+  def run_once(self) -> StepResult[InputType, OutputType]:
     """
     Выполняет один шаг автомата.
 
@@ -156,7 +155,7 @@ class MooreMachine[InputType, OutputType](
     if self._stop_condition and self._stop_condition(
       self._current_input, **self._stop_condition_kwargs
     ):
-      return MooreStepResult[InputType, OutputType](reason=MooreStepReason.STOP_CONDITION)
+      return StepResult[InputType, OutputType](reason=StepReason.STOP_CONDITION)
 
     output = self._current_state.execute(self._current_output, self._function_kwargs)
 
@@ -173,7 +172,7 @@ class MooreMachine[InputType, OutputType](
         stacklevel=2,
       )
 
-      return MooreStepResult[InputType, OutputType](reason=MooreStepReason.NO_TRANSITION)
+      return StepResult[InputType, OutputType](reason=StepReason.NO_TRANSITION)
 
     if len(available_transitions) > 1:
       raise RuntimeError(self._format_ambiguous_error(available_transitions))
@@ -194,9 +193,9 @@ class MooreMachine[InputType, OutputType](
     self._current_output = output
     self._current_input = processed_input
 
-    moore_step = MooreStepResult(
-      reason=MooreStepReason.SUCCESS,
-      data=MooreStepData.from_tuple((processed_input, output)),
+    moore_step = StepResult(
+      reason=StepReason.SUCCESS,
+      data=StepData.from_tuple((processed_input, output)),
     )
 
     self._results.append(moore_step)
@@ -208,7 +207,7 @@ class MooreMachine[InputType, OutputType](
     self,
     clear_before_run: bool = False,
     raise_on_error: bool = True,
-  ) -> list[MooreStepResult[InputType, OutputType]]:
+  ) -> list[StepResult[InputType, OutputType]]:
     """
     Выполняет автомат до остановки (по условию или отсутствию переходов).
 
@@ -237,10 +236,10 @@ class MooreMachine[InputType, OutputType](
         if raise_on_error:
           raise e
 
-        self._results.append(MooreStepResult[InputType, OutputType].error_step(e))
+        self._results.append(StepResult[InputType, OutputType].error_step(e))
         break
 
-      if step_result.reason != MooreStepReason.SUCCESS:
+      if step_result.reason != StepReason.SUCCESS:
         self._results.append(step_result)  # добавление ошибочного step
         break
 

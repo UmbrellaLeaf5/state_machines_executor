@@ -13,10 +13,12 @@ from ..utils import (
   InputProcessorProtocol,
   Kwargs,
   OutputFunctionProtocol,
+  StepData,
+  StepReason,
+  StepResult,
   TransConditionProtocol,
 )
 from .state import MooreState, MooreTransition
-from .step import MooreStepData, MooreStepReason, MooreStepResult
 
 
 # IMP: идеология методов:
@@ -40,7 +42,7 @@ class MooreEntityApi[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   _states: dict[str, MooreState[InputType, OutputType]]
-  _results: list[MooreStepResult[InputType, OutputType]]
+  _results: list[StepResult[InputType, OutputType]]
 
   _current_state: MooreState[InputType, OutputType] | UNSET
   _current_output: OutputType | UNSET
@@ -768,18 +770,18 @@ class MooreEntityApi[InputType, OutputType]:
   # MARK: Results
   # --------------------------------------------------------------------------------------
 
-  def get_results(self) -> list[MooreStepResult[InputType, OutputType]]:
+  def get_results(self) -> list[StepResult[InputType, OutputType]]:
     """Возвращает копию списка всех шагов."""
 
     return self._results.copy()
 
   # --------------------------------------------------------------------------------------
 
-  def get_results_data(self) -> list[MooreStepData[InputType, OutputType]]:
+  def get_results_data(self) -> list[StepData[InputType, OutputType]]:
     """Возвращает копии данных всех шагов."""
 
     return [
-      MooreStepData(step.data.processed_input, step.data.output) for step in self._results
+      StepData(step.data.processed_input, step.data.output) for step in self._results
     ]
 
   # --------------------------------------------------------------------------------------
@@ -802,7 +804,7 @@ class MooreEntityApi[InputType, OutputType]:
     """Возвращает выходное значение последнего успешного шага или `None`."""
 
     for step in reversed(self._results):
-      if step.reason == MooreStepReason.SUCCESS:
+      if step.reason == StepReason.SUCCESS:
         return step.data.output
 
     return None

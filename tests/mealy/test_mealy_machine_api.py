@@ -1,6 +1,6 @@
 import pytest
 
-from src.state_machines import MealyMachine, MealyState, MealyStepReason
+from src.state_machines import MealyMachine, MealyState, StepReason
 
 
 class TestMealyMachineAPI:
@@ -70,7 +70,7 @@ class TestMealyMachineAPI:
     with pytest.warns(UserWarning, match="No transitions in state 'A'"):
       result = empty_machine.run_once()
 
-    assert result.reason == MealyStepReason.NO_TRANSITION
+    assert result.reason == StepReason.NO_TRANSITION
 
   def test_run_once_ambiguous(self, empty_machine):
     def cond_true(input):
@@ -123,7 +123,7 @@ class TestMealyMachineAPI:
     results = machine.run_all(raise_on_error=False)
 
     assert len(results) == 1
-    assert results[0].reason == MealyStepReason.EXCEPTION
+    assert results[0].reason == StepReason.EXCEPTION
     assert isinstance(results[0].exception, RuntimeError)
     assert results[0].exception.args[0] == "boom"
 
@@ -148,7 +148,7 @@ class TestMealyMachineAPI:
     machine.update_current_data("A", "", "0")
 
     result = machine.run_all()[-1]
-    assert result.reason == MealyStepReason.STOP_CONDITION
+    assert result.reason == StepReason.STOP_CONDITION
 
   def test_results_methods(self, simple_machine):
     simple_machine.update_current_data("A", 0, 0)

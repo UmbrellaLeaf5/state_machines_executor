@@ -13,13 +13,15 @@ from ..utils import (
   InputProcessorProtocol,
   Kwargs,
   OutputFunctionProtocol,
+  StepData,
+  StepReason,
+  StepResult,
   TransConditionProtocol,
 )
 from .state import (
   MealyState,
   MealyTransition,
 )
-from .step import MealyStepData, MealyStepReason, MealyStepResult
 
 
 # IMP: идеология методов:
@@ -43,7 +45,7 @@ class MealyEntityApi[InputType, OutputType]:
   # --------------------------------------------------------------------------------------
 
   _states: dict[str, MealyState[InputType, OutputType]]
-  _results: list[MealyStepResult[InputType, OutputType]]
+  _results: list[StepResult[InputType, OutputType]]
 
   _current_state: MealyState[InputType, OutputType] | UNSET
   _current_output: OutputType | UNSET
@@ -748,18 +750,18 @@ class MealyEntityApi[InputType, OutputType]:
   # MARK: Results
   # --------------------------------------------------------------------------------------
 
-  def get_results(self) -> list[MealyStepResult[InputType, OutputType]]:
+  def get_results(self) -> list[StepResult[InputType, OutputType]]:
     """Возвращает копию списка всех шагов."""
 
     return self._results.copy()
 
   # --------------------------------------------------------------------------------------
 
-  def get_results_data(self) -> list[MealyStepData[InputType, OutputType]]:
+  def get_results_data(self) -> list[StepData[InputType, OutputType]]:
     """Возвращает копии данных всех шагов."""
 
     return [
-      MealyStepData(step.data.processed_input, step.data.output) for step in self._results
+      StepData(step.data.processed_input, step.data.output) for step in self._results
     ]
 
   # --------------------------------------------------------------------------------------
@@ -782,7 +784,7 @@ class MealyEntityApi[InputType, OutputType]:
     """Возвращает выходное значение последнего успешного шага или `None`."""
 
     for step in reversed(self._results):
-      if step.reason == MealyStepReason.SUCCESS:
+      if step.reason == StepReason.SUCCESS:
         return step.data.output
 
     return None

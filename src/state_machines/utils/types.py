@@ -9,3 +9,7 @@ class UNSET:
 
 
 UNSET_VAL = UNSET()
+
+# IMP: к сожалению, с такой функцией нету сужения типов
+# def is_unset(obj: Any) -> bool:
+#   return isinstance(obj, UNSET)

@@ -7,10 +7,9 @@
 import warnings
 from collections.abc import Callable
 
-from ..utils import UNSET
+from ..utils import UNSET, StepData, StepReason, StepResult
 from ._entity_api import MealyEntityApi
 from .state import MealyTransition
-from .step import MealyStepData, MealyStepReason, MealyStepResult
 
 
 class MealyMachine[InputType, OutputType](
@@ -113,7 +112,7 @@ class MealyMachine[InputType, OutputType](
   # MARK: Run
   # --------------------------------------------------------------------------------------
 
-  def run_once(self) -> MealyStepResult[InputType, OutputType]:
+  def run_once(self) -> StepResult[InputType, OutputType]:
     """
     Выполняет один шаг автомата.
 
@@ -143,7 +142,7 @@ class MealyMachine[InputType, OutputType](
     if self._stop_condition and self._stop_condition(
       self._current_input, **self._stop_condition_kwargs
     ):
-      return MealyStepResult[InputType, OutputType](reason=MealyStepReason.STOP_CONDITION)
+      return StepResult[InputType, OutputType](reason=StepReason.STOP_CONDITION)
 
     available_transitions = self._current_state.get_available_transitions(
       self._current_input, self._condition_kwargs
@@ -158,7 +157,7 @@ class MealyMachine[InputType, OutputType](
         stacklevel=2,
       )
 
-      return MealyStepResult[InputType, OutputType](reason=MealyStepReason.NO_TRANSITION)
+      return StepResult[InputType, OutputType](reason=StepReason.NO_TRANSITION)
 
     if len(available_transitions) > 1:
       raise RuntimeError(self._format_ambiguous_error(available_transitions))
@@ -181,9 +180,9 @@ class MealyMachine[InputType, OutputType](
     self._current_output = output
     self._current_input = processed_input
 
-    mealy_step = MealyStepResult(
-      reason=MealyStepReason.SUCCESS,
-      data=MealyStepData.from_tuple((processed_input, output)),
+    mealy_step = StepResult(
+      reason=StepReason.SUCCESS,
+      data=StepData.from_tuple((processed_input, output)),
     )
 
     self._results.append(mealy_step)
@@ -195,7 +194,7 @@ class MealyMachine[InputType, OutputType](
     self,
     clear_before_run: bool = False,
     raise_on_error: bool = True,
-  ) -> list[MealyStepResult[InputType, OutputType]]:
+  ) -> list[StepResult[InputType, OutputType]]:
     """
     Выполняет автомат до остановки (по условию или отсутствию переходов).
 
@@ -224,10 +223,10 @@ class MealyMachine[InputType, OutputType](
         if raise_on_error:
           raise e
 
-        self._results.append(MealyStepResult[InputType, OutputType].error_step(e))
+        self._results.append(StepResult[InputType, OutputType].error_step(e))
         break
 
-      if step_result.reason != MealyStepReason.SUCCESS:
+      if step_result.reason != StepReason.SUCCESS:
         self._results.append(step_result)  # добавление ошибочного step
         break
 
