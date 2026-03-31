@@ -10,10 +10,10 @@ from dataclasses import dataclass
 
 from ..utils import (
   InputProcessorProtocol,
-  Kwargs,
   OutputFunctionProtocol,
   TransConditionProtocol,
 )
+from ..utils.types import Kwargs
 
 
 # MARK: MooreTransition

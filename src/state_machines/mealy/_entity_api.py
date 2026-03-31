@@ -8,20 +8,16 @@
 import warnings
 
 from ..utils import (
-  UNSET,
-  UNSET_VAL,
   InputProcessorProtocol,
-  Kwargs,
   OutputFunctionProtocol,
   StepData,
   StepReason,
   StepResult,
+  StopConditionProtocol,
   TransConditionProtocol,
 )
-from .state import (
-  MealyState,
-  MealyTransition,
-)
+from ..utils.types import UNSET_TYPE, UNSET_VAL, Kwargs, MealyTransitionTuple, ResultTuple
+from .state import MealyState, MealyTransition
 
 
 # IMP: идеология методов:
@@ -47,15 +43,15 @@ class MealyEntityApi[InputType, OutputType]:
   _states: dict[str, MealyState[InputType, OutputType]]
   _results: list[StepResult[InputType, OutputType]]
 
-  _current_state: MealyState[InputType, OutputType] | UNSET
-  _current_output: OutputType | UNSET
-  _current_input: InputType | UNSET
+  _current_state: MealyState[InputType, OutputType] | UNSET_TYPE
+  _current_output: OutputType | UNSET_TYPE
+  _current_input: InputType | UNSET_TYPE
 
   _condition_kwargs: Kwargs
   _function_kwargs: Kwargs
   _processor_kwargs: Kwargs
 
-  _stop_condition: TransConditionProtocol[InputType] | None
+  _stop_condition: StopConditionProtocol[InputType] | None
   _stop_condition_kwargs: Kwargs
 
   # MARK: Init
@@ -63,20 +59,11 @@ class MealyEntityApi[InputType, OutputType]:
 
   def __init__(
     self,
-    transitions: list[
-      tuple[
-        str,
-        str,
-        TransConditionProtocol[InputType],
-        OutputFunctionProtocol[OutputType],
-        InputProcessorProtocol[InputType],
-      ]
-    ]
-    | None = None,
+    transitions: list[MealyTransitionTuple[InputType, OutputType]] | None = None,
     initial_state: str | None = None,
     initial_output: OutputType | None = None,
     initial_input: InputType | None = None,
-    stop_condition: TransConditionProtocol[InputType] | None = None,
+    stop_condition: StopConditionProtocol[InputType] | None = None,
     stop_condition_kwargs: Kwargs | None = None,
     condition_kwargs: Kwargs | None = None,
     function_kwargs: Kwargs | None = None,
@@ -215,7 +202,7 @@ class MealyEntityApi[InputType, OutputType]:
       raise KeyError(f"State '{state_name}' is not found")
 
     if (
-      not isinstance(self._current_state, UNSET)
+      not isinstance(self._current_state, UNSET_TYPE)
       and self._current_state.name == state_name
     ):
       warnings.warn(
@@ -313,14 +300,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   def get_state_transitions(
     self, state_name: str
-  ) -> list[
-    tuple[
-      str,
-      TransConditionProtocol[InputType],
-      OutputFunctionProtocol[OutputType],
-      InputProcessorProtocol[InputType],
-    ]
-  ]:
+  ) -> list[MealyTransitionTuple[InputType, OutputType]]:
     """
     Возвращает список переходов из указанного состояния.
 
@@ -328,7 +308,7 @@ class MealyEntityApi[InputType, OutputType]:
       state_name: Имя состояния.
 
     Returns:
-      Список кортежей `(target_state, condition, function, processor)`.
+      Список кортежей `(state_name, target_state, condition, function, processor)`.
 
     Raises:
       `KeyError`: Если состояние не существует.
@@ -341,6 +321,7 @@ class MealyEntityApi[InputType, OutputType]:
 
     return [
       (
+        state_name,
         target,
         trans.trans_condition,
         trans.output_function,
@@ -374,15 +355,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   def get_all_transitions(
     self,
-  ) -> list[
-    tuple[
-      str,
-      str,
-      TransConditionProtocol[InputType],
-      OutputFunctionProtocol[OutputType],
-      InputProcessorProtocol[InputType],
-    ]
-  ]:
+  ) -> list[MealyTransitionTuple[InputType, OutputType]]:
     """
     Возвращает список всех переходов в автомате.
 
@@ -498,15 +471,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   def set_transitions(
     self,
-    transitions: list[
-      tuple[
-        str,
-        str,
-        TransConditionProtocol[InputType],
-        OutputFunctionProtocol[OutputType],
-        InputProcessorProtocol[InputType],
-      ]
-    ],
+    transitions: list[MealyTransitionTuple[InputType, OutputType]],
   ) -> None:
     """
     Заменяет все переходы новыми.
@@ -522,15 +487,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   def update_transitions(
     self,
-    transitions: list[
-      tuple[
-        str,
-        str,
-        TransConditionProtocol[InputType],
-        OutputFunctionProtocol[OutputType],
-        InputProcessorProtocol[InputType],
-      ]
-    ],
+    transitions: list[MealyTransitionTuple[InputType, OutputType]],
   ) -> None:
     """
     Добавляет несколько переходов.
@@ -556,7 +513,7 @@ class MealyEntityApi[InputType, OutputType]:
   def get_current_state_name(self) -> str | None:
     """Возвращает имя текущего состояния или `None`, если оно не установлено."""
 
-    if isinstance(self._current_state, UNSET):
+    if isinstance(self._current_state, UNSET_TYPE):
       return None
 
     return self._current_state.name
@@ -566,7 +523,7 @@ class MealyEntityApi[InputType, OutputType]:
   def get_current_output(self) -> OutputType | None:
     """Возвращает текущее выходное значение или `None`, если оно не установлено."""
 
-    if isinstance(self._current_output, UNSET):
+    if isinstance(self._current_output, UNSET_TYPE):
       return None
 
     return self._current_output
@@ -576,7 +533,7 @@ class MealyEntityApi[InputType, OutputType]:
   def get_current_input(self) -> InputType | None:
     """Возвращает текущее входное значение или `None`, если оно не установлено."""
 
-    if isinstance(self._current_input, UNSET):
+    if isinstance(self._current_input, UNSET_TYPE):
       return None
 
     return self._current_input
@@ -587,9 +544,9 @@ class MealyEntityApi[InputType, OutputType]:
     """Проверяет, что автомат готов к запуску (установлены состояние, выход и вход)."""
 
     return not (
-      isinstance(self._current_state, UNSET)
-      or isinstance(self._current_output, UNSET)
-      or isinstance(self._current_input, UNSET)
+      isinstance(self._current_state, UNSET_TYPE)
+      or isinstance(self._current_output, UNSET_TYPE)
+      or isinstance(self._current_input, UNSET_TYPE)
     )
 
   # --------------------------------------------------------------------------------------
@@ -722,7 +679,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   def add_stop_condition(
     self,
-    stop_condition: TransConditionProtocol[InputType],
+    stop_condition: StopConditionProtocol[InputType],
     stop_condition_kwargs: Kwargs | None = None,
   ) -> None:
     """
@@ -766,7 +723,7 @@ class MealyEntityApi[InputType, OutputType]:
 
   # --------------------------------------------------------------------------------------
 
-  def get_results_tuple(self) -> list[tuple[InputType | None, OutputType | None]]:
+  def get_results_tuple(self) -> list[ResultTuple[InputType, OutputType]]:
     """Возвращает список кортежей `(input, output)` для всех шагов."""
 
     return [(step.data.processed_input, step.data.output) for step in self._results]

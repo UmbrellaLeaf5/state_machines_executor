@@ -57,7 +57,7 @@ class TestMealyMachineAPI:
 
     transitions = empty_machine.get_state_transitions("A")
     assert len(transitions) == 1
-    assert transitions[0][1] is cond2
+    assert transitions[0][2] is cond2
 
   def test_run_once_not_ready(self, empty_machine):
     with pytest.raises(RuntimeError, match="Current state not set"):

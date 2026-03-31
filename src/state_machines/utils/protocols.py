@@ -30,6 +30,10 @@ class TransConditionProtocol[InputType](Protocol):
 
 # --------------------------------------------------------------------------------------
 
+type StopConditionProtocol[InputType] = TransConditionProtocol[InputType]
+
+# --------------------------------------------------------------------------------------
+
 
 class OutputFunctionProtocol[OutputType](Protocol):
   """

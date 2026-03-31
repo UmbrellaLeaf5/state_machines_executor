@@ -9,9 +9,11 @@ from .moore import (
   MooreTransition,
 )
 from .utils import StepData, StepReason, StepResult
+from .utils.types import Kwargs
 
 
 __all__ = [
+  "Kwargs",
   "MealyMachine",
   "MealyState",
   "MealyTransition",
@@ -19,9 +21,6 @@ __all__ = [
   "MooreState",
   "MooreTransition",
   "StepData",
-  "StepData",
   "StepReason",
-  "StepReason",
-  "StepResult",
   "StepResult",
 ]

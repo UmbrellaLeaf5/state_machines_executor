@@ -7,7 +7,8 @@
 import warnings
 from collections.abc import Callable
 
-from ..utils import UNSET, StepData, StepReason, StepResult
+from ..utils import StepData, StepReason, StepResult
+from ..utils.types import UNSET_TYPE
 from ._entity_api import MealyEntityApi
 from .state import MealyTransition
 
@@ -86,7 +87,7 @@ class MealyMachine[InputType, OutputType](
       входе, выходе, общих kwargs и каждом из конфликтующих переходов.
     """
 
-    if isinstance(self._current_state, UNSET):
+    if isinstance(self._current_state, UNSET_TYPE):
       raise RuntimeError("Current state not set")
 
     def _get_name(obj: Callable) -> str:
@@ -125,13 +126,13 @@ class MealyMachine[InputType, OutputType](
       `KeyError`: Если целевое состояние не существует.
     """
 
-    if isinstance(self._current_state, UNSET):
+    if isinstance(self._current_state, UNSET_TYPE):
       raise RuntimeError("Current state not set")
 
-    if isinstance(self._current_output, UNSET):
+    if isinstance(self._current_output, UNSET_TYPE):
       raise RuntimeError("Current output not set")
 
-    if isinstance(self._current_input, UNSET):
+    if isinstance(self._current_input, UNSET_TYPE):
       raise RuntimeError("Current input not set")
 
     # IMP: идеологически:
