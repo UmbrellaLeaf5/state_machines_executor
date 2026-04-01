@@ -137,7 +137,7 @@ class BaseEntityApi[
     seen_names: set[str] = set()
 
     for item in states:
-      name, state = self._parse_state(item)
+      name, state = self._adapt_state(item)
 
       # проверяем дубликаты в списке
       if name in seen_names:
@@ -155,7 +155,7 @@ class BaseEntityApi[
       self._states[state.name] = state
 
   @abstractmethod
-  def _parse_state(self, item: PresentedStateType | StateType) -> tuple[str, StateType]:
+  def _adapt_state(self, item: PresentedStateType | StateType) -> tuple[str, StateType]:
     """
     Преобразует элемент входного списка в кортеж (имя состояния, объект состояния).
     Должен выбрасывать TypeError/ValueError при некорректном формате.

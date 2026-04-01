@@ -140,7 +140,7 @@ class MealyEntityApi[InputType, OutputType](
   # MARK: States
   # --------------------------------------------------------------------------------------
 
-  def _parse_state(
+  def _adapt_state(
     self, item: MealyStateString | MealyState[InputType, OutputType]
   ) -> tuple[str, MealyState[InputType, OutputType]]:
     name: str

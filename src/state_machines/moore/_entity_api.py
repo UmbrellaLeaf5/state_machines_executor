@@ -148,7 +148,7 @@ class MooreEntityApi[InputType, OutputType](
   # MARK: States
   # --------------------------------------------------------------------------------------
 
-  def _parse_state(
+  def _adapt_state(
     self, item: MooreStateTuple | MooreState[InputType, OutputType]
   ) -> tuple[str, MooreState[InputType, OutputType]]:
     name: str

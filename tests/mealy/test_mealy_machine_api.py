@@ -92,8 +92,8 @@ class TestMealyMachineAPI:
     msg = str(exc.value)
     assert "Ambiguous transition: 2 transitions available" in msg
     assert "Current state: 'A'" in msg
-    assert "to 'B' with:" in msg
-    assert "to 'C' with:" in msg
+    assert "target_state: 'B'" in msg
+    assert "target_state: 'C'" in msg
 
   def test_run_once_exception_in_condition(self):
     machine = MealyMachine[str, str]()
