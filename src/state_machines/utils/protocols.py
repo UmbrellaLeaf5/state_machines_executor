@@ -1,10 +1,6 @@
 from typing import Any, Protocol
 
 
-# MARK: Protocols
-# --------------------------------------------------------------------------------------
-
-
 class TransConditionProtocol[InputType](Protocol):
   """
   Протокол для функции-условия перехода.

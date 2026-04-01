@@ -1,5 +1,6 @@
 from .machine import MealyMachine
-from .state import MealyState, MealyTransition
+from .state import MealyState
+from .transition import MealyTransition
 
 
 __all__ = [
