@@ -1,13 +1,12 @@
-from .mealy import (
-  MealyMachine,
-  MealyState,
-  MealyTransition,
-)
-from .moore import (
-  MooreMachine,
-  MooreState,
-  MooreTransition,
-)
+"""
+Пакет state_machines.
+
+Предоставляет реализацию конечных автоматов Мили и Мура для обработки
+последовательных входных данных.
+"""
+
+from .mealy import MealyMachine, MealyState, MealyTransition
+from .moore import MooreMachine, MooreState, MooreTransition
 from .utils.protocols import (
   InputProcessorProtocol,
   OutputFunctionProtocol,

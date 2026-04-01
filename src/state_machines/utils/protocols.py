@@ -6,7 +6,7 @@ class TransConditionProtocol[InputType](Protocol):
   Протокол для функции-условия перехода.
 
   Принимает входное значение и возвращает `True`, если переход может быть выполнен.
-  Доп.`*args` и `**kwargs` позволяют передавать параметры через kwargs автомата.
+  Доп. `*args` и `**kwargs` позволяют передавать параметры через kwargs автомата.
   """
 
   def __call__(self, input: InputType, *args: Any, **kwargs: Any) -> bool:
@@ -25,6 +25,7 @@ class TransConditionProtocol[InputType](Protocol):
 
 
 # --------------------------------------------------------------------------------------
+
 
 type StopConditionProtocol[InputType] = TransConditionProtocol[InputType]
 

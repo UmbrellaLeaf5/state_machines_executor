@@ -68,7 +68,12 @@ class BaseMachine[
   def validate(self) -> None:
     """
     Проверяет целостность автомата.
+
     Выполняет общую проверку целевых состояний и вызывает специфичную.
+
+    Raises:
+      ValueError: Если есть переходы в несуществующие состояния
+        или специфичная проверка не пройдена.
     """
 
     missing_targets = [
@@ -89,7 +94,6 @@ class BaseMachine[
   @abstractmethod
   def _validate_specific(self) -> None:
     """Дополнительные проверки для конкретного типа автомата."""
-    pass
 
   # --------------------------------------------------------------------------------------
 
@@ -102,6 +106,9 @@ class BaseMachine[
 
     Returns:
       Отформатированное сообщение с деталями.
+
+    Raises:
+      RuntimeError: Если текущее состояние не установлено.
     """
 
     if isinstance(self._current_state, UNSET_TYPE):
@@ -216,13 +223,21 @@ class BaseMachine[
 
   @abstractmethod
   def _execute_state(self) -> OutputType | None:
-    pass
+    """
+    Выполняет функцию выхода текущего состояния.
+
+    Для Мура возвращает вычисленное значение, для Мили - None.
+    """
 
   @abstractmethod
   def _execute_transition(
     self, transition: TransitionType, state_output: OutputType | None
   ) -> OutputType:
-    pass
+    """
+    Выполняет переход.
+
+    Для Мура возвращает `state_output`, для Мили - результат `transition.execute()`.
+    """
 
   # --------------------------------------------------------------------------------------
 

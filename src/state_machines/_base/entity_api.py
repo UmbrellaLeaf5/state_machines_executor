@@ -91,7 +91,7 @@ class BaseEntityApi[
 
     Args:
       state_name: Имя удаляемого состояния.
-      cleanup_transitions: Если `True`, удаляет все переходы, связ. с этим состоянием:
+      cleanup_transitions: Если `True`, удаляет все переходы, связанные с этим состоянием:
         - переходы из других состояний в это состояние,
         - переходы из этого состояния в другие состояния.
 
@@ -127,12 +127,29 @@ class BaseEntityApi[
   # !: entities
 
   def set_states(self, states: list[PresentedStateType | StateType]) -> None:
+    """
+    Заменяет все состояния новым списком.
+
+    Args:
+      states: Список состояний в любом допустимом формате.
+    """
+
     self.clear_states()
     self.update_states(states)
 
   # --------------------------------------------------------------------------------------
 
   def update_states(self, states: list[PresentedStateType | StateType]) -> None:
+    """
+    Добавляет состояния из списка.
+
+    Args:
+      states: Список состояний в любом допустимом формате.
+
+    Raises:
+      ValueError: Если в списке есть дубликаты имён или состояние уже существует.
+    """
+
     items: list[StateType] = []
     seen_names: set[str] = set()
 
@@ -158,7 +175,16 @@ class BaseEntityApi[
   def _adapt_state(self, item: PresentedStateType | StateType) -> tuple[str, StateType]:
     """
     Преобразует элемент входного списка в кортеж (имя состояния, объект состояния).
-    Должен выбрасывать TypeError/ValueError при некорректном формате.
+
+    Args:
+      item: Элемент для преобразования.
+
+    Returns:
+      Кортеж из имени состояния и объекта состояния.
+
+    Raises:
+      TypeError: При некорректном формате.
+      ValueError: При некорректных данных.
     """
 
   # --------------------------------------------------------------------------------------
@@ -172,6 +198,19 @@ class BaseEntityApi[
   # --------------------------------------------------------------------------------------
 
   def get_state_transitions(self, state_name: str) -> list[PresentedTransitionType]:
+    """
+    Возвращает список переходов из указанного состояния в виде кортежей.
+
+    Args:
+      state_name: Имя состояния.
+
+    Returns:
+      Список кортежей, представляющих переходы.
+
+    Raises:
+      KeyError: Если состояние не существует.
+    """
+
     if state_name not in self._states:
       raise KeyError(f"State '{state_name}' not found")
 
@@ -208,6 +247,13 @@ class BaseEntityApi[
   def get_all_transitions(
     self,
   ) -> list[PresentedTransitionType]:
+    """
+    Возвращает список всех переходов автомата в виде кортежей.
+
+    Returns:
+      Список кортежей, представляющих переходы.
+    """
+
     return [
       typing.cast(PresentedTransitionType, dataclasses.astuple(trans))
       for state in self._states.values()
@@ -226,7 +272,7 @@ class BaseEntityApi[
 
   @abstractmethod
   def add_transition(self, *args, **kwargs) -> None:
-    pass
+    """Добавляет переход. Реализуется в конкретных классах."""
 
   def _add_transition(
     self,
@@ -237,6 +283,21 @@ class BaseEntityApi[
     input_processor: InputProcessorProtocol[InputType],
     replace: bool = False,
   ) -> None:
+    """
+    Внутренний метод добавления перехода.
+
+    Args:
+      source_state: Имя исходного состояния.
+      target_state: Имя целевого состояния.
+      condition: Функция-условие.
+      output_function: Функция выхода (для Мили) или None (для Мура).
+      input_processor: Функция обработки входа.
+      replace: Заменять существующий переход или нет.
+
+    Raises:
+      ValueError: Если переход уже существует и `replace=False`.
+    """
+
     self._ensure_state_exists(source_state)
     self._ensure_state_exists(target_state)
 
@@ -260,9 +321,18 @@ class BaseEntityApi[
 
   @abstractmethod
   def _ensure_state_exists(self, state_name: str) -> None:
-    """Гарантирует, что состояние существует.
-    Для Мили - создаёт, для Мура - выбрасывает ошибку."""
-    pass
+    """
+    Гарантирует, что состояние существует.
+
+    Для Мили - создаёт состояние, если его нет.
+    Для Мура - выбрасывает ошибку, если состояния нет.
+
+    Args:
+      state_name: Имя состояния.
+
+    Raises:
+      `KeyError`: Если состояние не существует и автомат Мура.
+    """
 
   @abstractmethod
   def _create_transition(
@@ -273,8 +343,19 @@ class BaseEntityApi[
     output_function: OutputFunctionProtocol[OutputType] | None,
     input_processor: InputProcessorProtocol[InputType],
   ) -> TransitionType:
-    """Создаёт объект перехода (для Мили output_func обязателен, для Мура - None)."""
-    pass
+    """
+    Создаёт объект перехода.
+
+    Args:
+      source_state: Имя исходного состояния.
+      target_state: Имя целевого состояния.
+      trans_condition: Функция-условие.
+      output_function: Функция выхода (для Мили обязательна, для Мура - None).
+      input_processor: Функция обработки входа.
+
+    Returns:
+      Объект перехода конкретного типа.
+    """
 
   # --------------------------------------------------------------------------------------
 
@@ -307,6 +388,13 @@ class BaseEntityApi[
     self,
     transitions: list[PresentedTransitionType],
   ) -> None:
+    """
+    Заменяет все переходы новым списком.
+
+    Args:
+      transitions: Список переходов в виде кортежей.
+    """
+
     self.clear_transitions()
     self.update_transitions(transitions)
 
@@ -316,6 +404,13 @@ class BaseEntityApi[
     self,
     transitions: list[PresentedTransitionType],
   ) -> None:
+    """
+    Добавляет переходы из списка.
+
+    Args:
+      transitions: Список переходов в виде кортежей.
+    """
+
     for trans in transitions:
       self.add_transition(*trans)
 
@@ -430,7 +525,7 @@ class BaseEntityApi[
   # --------------------------------------------------------------------------------------
 
   def clear_current_data(self) -> None:
-    """Сбрасывает текущие данные в состояние 'не установлено'"""
+    """Сбрасывает текущие данные в состояние 'не установлено'."""
 
     self._current_state = UNSET_VAL
     self._current_output = UNSET_VAL

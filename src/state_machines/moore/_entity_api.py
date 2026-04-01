@@ -232,6 +232,19 @@ class MooreEntityApi[InputType, OutputType](
     output_function: OutputFunctionProtocol[OutputType] | None,
     input_processor: InputProcessorProtocol[InputType],
   ) -> MooreTransition[InputType]:
+    """
+    Создаёт объект перехода.
+
+    Args:
+      source_state: Имя исходного состояния.
+      target_state: Имя целевого состояния.
+      trans_condition: Функция-условие перехода.
+      output_function: Функция вычисления выхода (None для автомата Мура).
+      input_processor: Функция обработки входа.
+
+    Returns:
+      Объект `MooreTransition`.
+    """
 
     return MooreTransition(
       source_state=source_state,

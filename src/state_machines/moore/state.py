@@ -19,7 +19,7 @@ class MooreState[InputType, OutputType](BaseState[InputType, MooreTransition]):
     name: Имя состояния.
     output_function: Функция, вычисляющая выходное значение состояния.
     transitions: Словарь переходов, где ключ - имя целевого состояния,
-      значение - объект MooreTransition.
+      значение - объект `MooreTransition`.
   """
 
   name: str

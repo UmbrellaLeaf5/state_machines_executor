@@ -32,11 +32,19 @@ class MealyMachine[InputType, OutputType](
   # --------------------------------------------------------------------------------------
 
   def _validate_specific(self) -> None:
+    """В автомате Мили нет специфичных проверок."""
     pass
 
   # --------------------------------------------------------------------------------------
 
   def _execute_state(self) -> OutputType | None:
+    """
+    В автомате Мили состояние не вычисляет выходное значение.
+
+    Returns:
+      Всегда `None`.
+    """
+
     return None
 
   # --------------------------------------------------------------------------------------
@@ -46,6 +54,20 @@ class MealyMachine[InputType, OutputType](
     transition: MealyTransition[InputType, OutputType],
     state_output: OutputType | None,
   ) -> OutputType:
+    """
+    Выполняет функцию выхода перехода.
+
+    Args:
+      transition: Объект перехода.
+      state_output: Выходное значение состояния (не используется в автомате Мили).
+
+    Returns:
+      Результат выполнения функции выхода перехода.
+
+    Raises:
+      `RuntimeError`: Если текущее выходное значение не установлено.
+    """
+
     if isinstance(self._current_output, UNSET_TYPE):
       raise RuntimeError("Current output not set")
 

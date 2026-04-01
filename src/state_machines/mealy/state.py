@@ -1,3 +1,4 @@
+# state.py (mealy)
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,7 +17,7 @@ class MealyState[InputType, OutputType](BaseState[InputType, MealyTransition]):
   Attributes:
     name: Имя состояния.
     transitions: Словарь переходов, где ключ - имя целевого состояния,
-                  значение - объект MealyTransition.
+      значение - объект `MealyTransition`.
   """
 
   name: str

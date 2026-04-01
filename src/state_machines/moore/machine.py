@@ -49,6 +49,16 @@ class MooreMachine[InputType, OutputType](
   # --------------------------------------------------------------------------------------
 
   def _execute_state(self) -> OutputType | None:
+    """
+    Выполняет функцию выхода текущего состояния.
+
+    Returns:
+      Результат выполнения функции выхода.
+
+    Raises:
+      `RuntimeError`: Если текущее состояние или выход не установлены.
+    """
+
     if isinstance(self._current_state, UNSET_TYPE):
       raise RuntimeError("Current state not set")
 
@@ -62,6 +72,21 @@ class MooreMachine[InputType, OutputType](
   def _execute_transition(
     self, transition: MooreTransition[InputType], state_output: OutputType | None
   ) -> OutputType:
+    """
+    Выполняет переход. В автомате Мура выходное значение определяется состоянием,
+    поэтому переход возвращает то же значение, что и состояние.
+
+    Args:
+      transition: Объект перехода.
+      state_output: Выходное значение, полученное от состояния.
+
+    Returns:
+      Выходное значение состояния.
+
+    Raises:
+      `RuntimeError`: Если `state_output` равен `None`.
+    """
+
     if state_output is None:
       raise RuntimeError("Moore machine: state_output cannot be None")
 

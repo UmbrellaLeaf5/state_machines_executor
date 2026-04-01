@@ -77,7 +77,7 @@ class MealyEntityApi[InputType, OutputType](
         Если указан, автомат будет готов к запуску после установки
         `initial_output` и `initial_input`.
 
-      initial_output: Нач. выходное значение. Используется вместе с `initial_state`.
+      initial_output: Начальное выходное значение. Используется вместе с `initial_state`.
 
       initial_input: Начальное входное значение. Используется вместе с `initial_state`.
 
@@ -98,7 +98,6 @@ class MealyEntityApi[InputType, OutputType](
       processor_kwargs: Дополнительные именованные аргументы для всех процессоров входа.
         Передаются в каждый processor как `**kwargs`.
     """
-
     self._states = {}
     self._results = []
 
@@ -214,6 +213,23 @@ class MealyEntityApi[InputType, OutputType](
     output_function: OutputFunctionProtocol[OutputType] | None,
     input_processor: InputProcessorProtocol[InputType],
   ) -> MealyTransition[InputType, OutputType]:
+    """
+    Создаёт объект перехода.
+
+    Args:
+      source_state: Имя исходного состояния.
+      target_state: Имя целевого состояния.
+      trans_condition: Функция-условие перехода.
+      output_function: Функция вычисления выхода.
+      input_processor: Функция обработки входа.
+
+    Returns:
+      Объект `MealyTransition`.
+
+    Raises:
+      `ValueError`: Если `output_function` равен `None`.
+    """
+
     if output_function is None:
       raise ValueError("`output_function` cannot be `None`")
 
