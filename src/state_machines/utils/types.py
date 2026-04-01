@@ -37,4 +37,5 @@ type MooreTransitionTuple[InputType] = tuple[
   InputProcessorProtocol[InputType],
 ]
 
+type MealyStateString = str
 type MooreStateTuple[OutputType] = tuple[str, OutputFunctionProtocol[OutputType]]

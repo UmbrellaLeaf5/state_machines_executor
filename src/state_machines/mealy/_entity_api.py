@@ -5,16 +5,21 @@
 общими kwargs, условием остановки и результатами.
 """
 
-import warnings
-
+from .._base import BaseEntityApi
 from ..utils.protocols import (
   InputProcessorProtocol,
   OutputFunctionProtocol,
   StopConditionProtocol,
   TransConditionProtocol,
 )
-from ..utils.step import StepData, StepReason, StepResult
-from ..utils.types import UNSET_TYPE, UNSET_VAL, Kwargs, MealyTransitionTuple, ResultTuple
+from ..utils.step import StepResult
+from ..utils.types import (
+  UNSET_TYPE,
+  UNSET_VAL,
+  Kwargs,
+  MealyStateString,
+  MealyTransitionTuple,
+)
 from .state import MealyState, MealyTransition
 
 
@@ -30,7 +35,16 @@ from .state import MealyState, MealyTransition
 # 3. def clear_entities(self, ...) -> None: ...
 
 
-class MealyEntityApi[InputType, OutputType]:
+class MealyEntityApi[InputType, OutputType](
+  BaseEntityApi[
+    InputType,
+    OutputType,
+    MealyState[InputType, OutputType],
+    MealyTransition[InputType, OutputType],
+    MealyStateString,
+    MealyTransitionTuple[InputType, OutputType],
+  ]
+):
   """
   Миксин, предоставляющий API для управления сущностями автомата Мили.
   """
@@ -149,239 +163,27 @@ class MealyEntityApi[InputType, OutputType]:
   # MARK: States
   # --------------------------------------------------------------------------------------
 
-  def get_state_names(self) -> list[str]:
-    """Возвращает список имён всех состояний (копия)."""
+  def _parse_state(
+    self, item: MealyStateString | MealyState[InputType, OutputType]
+  ) -> tuple[str, MealyState[InputType, OutputType]]:
+    name: str
+    state: MealyState[InputType, OutputType]
 
-    return list(self._states.keys())
+    if isinstance(item, str):
+      name = item
+      state = MealyState[InputType, OutputType](name, {})
 
-  # --------------------------------------------------------------------------------------
+    elif isinstance(item, MealyState):
+      name = item.name
+      state = item
 
-  def get_states_amount(self) -> int:
-    """Возвращает количество состояний."""
+    else:
+      raise TypeError(f"Expected `str` or `MealyState`, got `{type(item).__name__}`")
 
-    return len(self._states)
-
-  # --------------------------------------------------------------------------------------
-  # !: entity
-
-  def add_state(self, state: MealyState[InputType, OutputType]) -> None:
-    """
-    Добавляет состояние.
-
-    Args:
-      state: Объект состояния.
-
-    Raises:
-      `ValueError`: Если состояние с таким именем уже существует.
-    """
-
-    if state.name in self._states:
-      raise ValueError(f"State '{state.name}' already exists")
-
-    self._states[state.name] = state
-
-  # --------------------------------------------------------------------------------------
-
-  def remove_state(self, state_name: str, cleanup_transitions: bool = False) -> None:
-    """
-    Удаляет состояние.
-
-    Args:
-      state_name: Имя удаляемого состояния.
-      cleanup_transitions: Если `True`, удаляет все переходы, связ. с этим состоянием:
-        - переходы из других состояний в это состояние,
-        - переходы из этого состояния в другие состояния.
-
-    Raises:
-      `KeyError`: Если состояние не существует.
-    """
-
-    if state_name not in self._states:
-      raise KeyError(f"State '{state_name}' is not found")
-
-    if (
-      not isinstance(self._current_state, UNSET_TYPE)
-      and self._current_state.name == state_name
-    ):
-      warnings.warn(
-        f"Removing current state '{state_name}', machine reset",
-        UserWarning,
-        stacklevel=2,
-      )
-
-      self.clear_current_data()
-
-    if cleanup_transitions:
-      for state in self._states.values():
-        if state_name in state.transitions:
-          state.remove_transition(state_name)
-
-      self._states[state_name].transitions.clear()
-
-    self._states.pop(state_name)
-
-  # --------------------------------------------------------------------------------------
-  # !: entities
-
-  def set_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
-    """
-    Заменяет все состояния новыми.
-
-    Args:
-      states: Список состояний. Каждый элемент может быть:
-        - строкой (`state_name`)
-        - объектом `MealyState`
-
-    Raises:
-      `TypeError`: При неверном типе элемента.
-      `ValueError`: При дубликате имени в списке.
-    """
-
-    self.clear_states()
-    self.update_states(states)
-
-  # --------------------------------------------------------------------------------------
-
-  def update_states(self, states: list[str | MealyState[InputType, OutputType]]) -> None:
-    """
-    Добавляет несколько состояний атомарно.
-
-    Args:
-      states: Список состояний. Каждый элемент может быть:
-        - строкой (`state_name`)
-        - объектом `MealyState`
-
-    Raises:
-      `TypeError`: При неверном типе элемента.
-      `ValueError`: При дубликате имени в списке.
-    """
-
-    items: list[MealyState[InputType, OutputType]] = []
-    seen_names: set[str] = set()
-
-    for item in states:
-      if isinstance(item, str):
-        name = item
-        state = MealyState[InputType, OutputType](name, {})
-
-      elif isinstance(item, MealyState):
-        name = item.name
-        state = item
-
-      else:
-        raise TypeError(f"Expected `str` or `MealyState`, got `{type(item).__name__}`")
-
-      # проверяем дубликаты в списке
-      if name in seen_names:
-        raise ValueError(f"Duplicate state name in input: {name}")
-
-      seen_names.add(name)
-
-      # проверяем, что состояние не существует в автомате
-      if name in self._states:
-        raise ValueError(f"State '{name}' already exists")
-
-      items.append(state)
-
-    for state in items:
-      self._states[state.name] = state
-
-  # --------------------------------------------------------------------------------------
-
-  def clear_states(self) -> None:
-    """Удаляет все состояния."""
-
-    self._states.clear()
+    return (name, state)
 
   # MARK: Transitions
   # --------------------------------------------------------------------------------------
-
-  def get_state_transitions(
-    self, state_name: str
-  ) -> list[MealyTransitionTuple[InputType, OutputType]]:
-    """
-    Возвращает список переходов из указанного состояния.
-
-    Args:
-      state_name: Имя состояния.
-
-    Returns:
-      Список кортежей `(state_name, target_state, condition, function, processor)`.
-
-    Raises:
-      `KeyError`: Если состояние не существует.
-    """
-
-    if state_name not in self._states:
-      raise KeyError(f"State '{state_name}' not found")
-
-    state = self._states[state_name]
-
-    return [
-      (
-        state_name,
-        target,
-        trans.trans_condition,
-        trans.output_function,
-        trans.input_processor,
-      )
-      for target, trans in state.transitions.items()
-    ]
-
-  # --------------------------------------------------------------------------------------
-
-  def get_state_transitions_amount(self, state_name: str) -> int:
-    """
-    Возвращает количество переходов из указанного состояния.
-
-    Args:
-      state_name: Имя состояния.
-
-    Returns:
-      Количество переходов.
-
-    Raises:
-      `KeyError`: Если состояние не существует.
-    """
-
-    if state_name not in self._states:
-      raise KeyError(f"State '{state_name}' not found")
-
-    return len(self._states[state_name].transitions)
-
-  # --------------------------------------------------------------------------------------
-
-  def get_all_transitions(
-    self,
-  ) -> list[MealyTransitionTuple[InputType, OutputType]]:
-    """
-    Возвращает список всех переходов в автомате.
-
-    Returns:
-      Список кортежей `(source_state, target_state, condition, function, processor)`.
-    """
-
-    return [
-      (
-        state_name,
-        target,
-        trans.trans_condition,
-        trans.output_function,
-        trans.input_processor,
-      )
-      for state_name, state in self._states.items()
-      for target, trans in state.transitions.items()
-    ]
-
-  # --------------------------------------------------------------------------------------
-
-  def get_all_transitions_amount(self) -> int:
-    """Возвращает общее количество переходов во всех состояниях."""
-
-    return sum(len(state.transitions) for state in self._states.values())
-
-  # --------------------------------------------------------------------------------------
-  # !: entity
 
   def add_transition(
     self,
@@ -410,343 +212,38 @@ class MealyEntityApi[InputType, OutputType]:
       `ValueError`: Если переход уже существует и `replace=False`.
     """
 
-    # создаём исходное состояние, если его нет
-    if source_state not in self._states:
-      self._states[source_state] = MealyState[InputType, OutputType](source_state, {})
+    self._add_transition(
+      source_state,
+      target_state,
+      trans_condition,
+      output_function,
+      input_processor,
+      replace,
+    )
 
-    # создаём целевое состояние, если его нет
-    if target_state not in self._states:
-      self._states[target_state] = MealyState[InputType, OutputType](target_state, {})
+  # --------------------------------------------------------------------------------------
 
-    transition = MealyTransition(
+  def _ensure_state_exists(self, state_name: str) -> None:
+    if state_name not in self._states:
+      self._states[state_name] = MealyState[InputType, OutputType](state_name, {})
+
+  # --------------------------------------------------------------------------------------
+
+  def _create_transition(
+    self,
+    source_state: str,
+    target_state: str,
+    trans_condition: TransConditionProtocol[InputType],
+    output_function: OutputFunctionProtocol[OutputType] | None,
+    input_processor: InputProcessorProtocol[InputType],
+  ) -> MealyTransition[InputType, OutputType]:
+    if output_function is None:
+      raise ValueError("`output_function` cannot be `None`")
+
+    return MealyTransition(
       source_state=source_state,
       target_state=target_state,
       trans_condition=trans_condition,
       output_function=output_function,
       input_processor=input_processor,
     )
-
-    source = self._states[source_state]
-
-    if source.has_transition(target_state):
-      if not replace:
-        raise ValueError(
-          f"Transition from '{source_state}' to '{target_state}' already exists. "
-          "Use `replace=True` to replace it."
-        )
-
-      source.replace_transition(transition)
-
-    else:
-      source.add_transition(transition)
-
-  # --------------------------------------------------------------------------------------
-
-  def remove_transition(self, source_state: str, target_state: str) -> None:
-    """
-    Удаляет переход.
-
-    Args:
-      source_state: Имя исходного состояния.
-      target_state: Имя целевого состояния.
-
-    Raises:
-      `KeyError`: Если исходное состояние не существует или переход не найден.
-    """
-
-    if source_state not in self._states:
-      raise KeyError(f"State '{source_state}' is not found")
-
-    state = self._states[source_state]
-
-    if target_state not in state.transitions:
-      raise KeyError(f"Transition from '{source_state}' to '{target_state}' is not found")
-
-    state.remove_transition(target_state)
-
-  # --------------------------------------------------------------------------------------
-  # !: entities
-
-  def set_transitions(
-    self,
-    transitions: list[MealyTransitionTuple[InputType, OutputType]],
-  ) -> None:
-    """
-    Заменяет все переходы новыми.
-
-    Args:
-      transitions: Список переходов `(source, target, condition, function, processor)`.
-    """
-
-    self.clear_transitions()
-    self.update_transitions(transitions)
-
-  # --------------------------------------------------------------------------------------
-
-  def update_transitions(
-    self,
-    transitions: list[MealyTransitionTuple[InputType, OutputType]],
-  ) -> None:
-    """
-    Добавляет несколько переходов.
-
-    Args:
-      transitions: Список переходов `(source, target, condition, function, processor)`.
-    """
-
-    for source, target, cond, func, proc in transitions:
-      self.add_transition(source, target, cond, func, proc)
-
-  # --------------------------------------------------------------------------------------
-
-  def clear_transitions(self) -> None:
-    """Удаляет все переходы из всех состояний."""
-
-    for state in self._states.values():
-      state.transitions.clear()
-
-  # MARK: Current data
-  # --------------------------------------------------------------------------------------
-
-  def get_current_state_name(self) -> str | None:
-    """Возвращает имя текущего состояния или `None`, если оно не установлено."""
-
-    if isinstance(self._current_state, UNSET_TYPE):
-      return None
-
-    return self._current_state.name
-
-  # --------------------------------------------------------------------------------------
-
-  def get_current_output(self) -> OutputType | None:
-    """Возвращает текущее выходное значение или `None`, если оно не установлено."""
-
-    if isinstance(self._current_output, UNSET_TYPE):
-      return None
-
-    return self._current_output
-
-  # --------------------------------------------------------------------------------------
-
-  def get_current_input(self) -> InputType | None:
-    """Возвращает текущее входное значение или `None`, если оно не установлено."""
-
-    if isinstance(self._current_input, UNSET_TYPE):
-      return None
-
-    return self._current_input
-
-  # --------------------------------------------------------------------------------------
-
-  def is_ready(self) -> bool:
-    """Проверяет, что автомат готов к запуску (установлены состояние, выход и вход)."""
-
-    return not (
-      isinstance(self._current_state, UNSET_TYPE)
-      or isinstance(self._current_output, UNSET_TYPE)
-      or isinstance(self._current_input, UNSET_TYPE)
-    )
-
-  # --------------------------------------------------------------------------------------
-  # !: entities
-
-  def set_current_data(
-    self,
-    state_name: str,
-    input: InputType,
-    output: OutputType,
-  ) -> None:
-    """
-    Устанавливает все компоненты текущего состояния.
-
-    Args:
-      state_name: Имя состояния.
-      input: Входное значение.
-      output: Выходное значение.
-    """
-
-    self.clear_current_data()
-    self.update_current_data(state_name, input, output)
-
-  # --------------------------------------------------------------------------------------
-
-  def update_current_data(
-    self,
-    state_name: str | None = None,
-    input: InputType | None = None,
-    output: OutputType | None = None,
-  ) -> None:
-    """
-    Частично обновляет текущие данные.
-
-    Можно обновить только состояние, только выход, только вход или любую комбинацию.
-
-    Примечание: Для `is_ready()` требуются все три компонента.
-    Если обновить только выход или вход без состояния, автомат не будет готов к запуску.
-
-    Args:
-      state_name: Имя состояния (или `None`, чтобы не обновлять).
-      input: Входное значение (или `None`, чтобы не обновлять).
-      output: Выходное значение (или `None`, чтобы не обновлять).
-
-    Raises:
-      `KeyError`: Если `state_name` передан, но состояние не существует.
-    """
-
-    if state_name is not None:
-      if state_name not in self._states:
-        raise KeyError(f"State '{state_name}' not found")
-
-      self._current_state = self._states[state_name]
-
-    if output is not None:
-      self._current_output = output
-
-    if input is not None:
-      self._current_input = input
-
-  # --------------------------------------------------------------------------------------
-
-  def clear_current_data(self) -> None:
-    """Сбрасывает текущие данные в состояние 'не установлено'"""
-
-    self._current_state = UNSET_VAL
-    self._current_output = UNSET_VAL
-    self._current_input = UNSET_VAL
-
-  # MARK: Common kwargs
-  # --------------------------------------------------------------------------------------
-  # !: entities
-
-  def set_common_kwargs(
-    self,
-    condition_kwargs: Kwargs | None = None,
-    function_kwargs: Kwargs | None = None,
-    processor_kwargs: Kwargs | None = None,
-  ) -> None:
-    """
-    Заменяет все common `kwargs` новыми словарями.
-
-    Args:
-      condition_kwargs: Новый словарь для условий.
-      function_kwargs: Новый словарь для функций выхода.
-      processor_kwargs: Новый словарь для процессоров входа.
-    """
-
-    self.clear_common_kwargs()
-    self.update_common_kwargs(condition_kwargs, function_kwargs, processor_kwargs)
-
-  # --------------------------------------------------------------------------------------
-
-  def update_common_kwargs(
-    self,
-    condition_kwargs: Kwargs | None = None,
-    function_kwargs: Kwargs | None = None,
-    processor_kwargs: Kwargs | None = None,
-  ) -> None:
-    """
-    Обновляет common `kwargs` (добавляет или перезаписывает ключи).
-
-    Args:
-      condition_kwargs: Словарь для обновления условий.
-      function_kwargs: Словарь для обновления функций выхода.
-      processor_kwargs: Словарь для обновления процессоров входа.
-    """
-
-    if condition_kwargs is not None:
-      self._condition_kwargs.update(condition_kwargs)
-
-    if function_kwargs is not None:
-      self._function_kwargs.update(function_kwargs)
-
-    if processor_kwargs is not None:
-      self._processor_kwargs.update(processor_kwargs)
-
-  # --------------------------------------------------------------------------------------
-
-  def clear_common_kwargs(self) -> None:
-    """Очищает все `common kwargs`."""
-
-    self._condition_kwargs = {}
-    self._function_kwargs = {}
-    self._processor_kwargs = {}
-
-  # MARK: Stop condition
-  # --------------------------------------------------------------------------------------
-  # !: entity
-
-  def add_stop_condition(
-    self,
-    stop_condition: StopConditionProtocol[InputType],
-    stop_condition_kwargs: Kwargs | None = None,
-  ) -> None:
-    """
-    Устанавливает условие остановки.
-
-    Args:
-      stop_condition: Функция, принимающая вход и возвращающая True для остановки.
-      stop_condition_kwargs: Дополнительные аргументы для `stop_condition`.
-    """
-
-    if stop_condition_kwargs is None:
-      stop_condition_kwargs = {}
-
-    self._stop_condition = stop_condition
-    self._stop_condition_kwargs = stop_condition_kwargs
-
-  # --------------------------------------------------------------------------------------
-
-  def remove_stop_condition(self) -> None:
-    """Удаляет условие остановки."""
-
-    self._stop_condition = None
-    self._stop_condition_kwargs = {}
-
-  # MARK: Results
-  # --------------------------------------------------------------------------------------
-
-  def get_results(self) -> list[StepResult[InputType, OutputType]]:
-    """Возвращает копию списка всех шагов."""
-
-    return self._results.copy()
-
-  # --------------------------------------------------------------------------------------
-
-  def get_results_data(self) -> list[StepData[InputType, OutputType]]:
-    """Возвращает копии данных всех шагов."""
-
-    return [
-      StepData(step.data.processed_input, step.data.output) for step in self._results
-    ]
-
-  # --------------------------------------------------------------------------------------
-
-  def get_results_tuple(self) -> list[ResultTuple[InputType, OutputType]]:
-    """Возвращает список кортежей `(input, output)` для всех шагов."""
-
-    return [(step.data.processed_input, step.data.output) for step in self._results]
-
-  # --------------------------------------------------------------------------------------
-
-  def get_only_results(self) -> list[OutputType | None]:
-    """Возвращает список выходных значений для всех шагов."""
-
-    return [step.data.output for step in self._results]
-
-  # --------------------------------------------------------------------------------------
-
-  def get_final_result(self) -> OutputType | None:
-    """Возвращает выходное значение последнего успешного шага или `None`."""
-
-    for step in reversed(self._results):
-      if step.reason == StepReason.SUCCESS:
-        return step.data.output
-
-    return None
-
-  # --------------------------------------------------------------------------------------
-
-  def clear_results(self) -> None:
-    """Очищает историю результатов выполнения."""
-
-    self._results.clear()
