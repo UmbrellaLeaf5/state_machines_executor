@@ -1,11 +1,5 @@
 from typing import Any
 
-from .protocols import (
-  InputProcessorProtocol,
-  OutputFunctionProtocol,
-  TransConditionProtocol,
-)
-
 
 Kwargs = dict[str, Any]
 
@@ -21,21 +15,3 @@ UNSET_VAL = UNSET_TYPE()
 #   return isinstance(obj, UNSET)
 
 type ResultTuple[InputType, OutputType] = tuple[InputType | None, OutputType | None]
-
-type MealyTransitionTuple[InputType, OutputType] = tuple[
-  str,
-  str,
-  TransConditionProtocol[InputType],
-  OutputFunctionProtocol[OutputType],
-  InputProcessorProtocol[InputType],
-]
-
-type MooreTransitionTuple[InputType] = tuple[
-  str,
-  str,
-  TransConditionProtocol[InputType],
-  InputProcessorProtocol[InputType],
-]
-
-type MealyStateString = str
-type MooreStateTuple[OutputType] = tuple[str, OutputFunctionProtocol[OutputType]]

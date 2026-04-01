@@ -12,15 +12,9 @@ from ..utils.protocols import (
   StopConditionProtocol,
   TransConditionProtocol,
 )
-from ..utils.step import StepResult
-from ..utils.types import (
-  UNSET_TYPE,
-  UNSET_VAL,
-  Kwargs,
-  MealyStateString,
-  MealyTransitionTuple,
-)
+from ..utils.types import UNSET_VAL, Kwargs
 from .state import MealyState, MealyTransition
+from .types import MealyStateString, MealyTransitionTuple
 
 
 # IMP: идеология методов:
@@ -48,23 +42,6 @@ class MealyEntityApi[InputType, OutputType](
   """
   Миксин, предоставляющий API для управления сущностями автомата Мили.
   """
-
-  # MARK: Fields
-  # --------------------------------------------------------------------------------------
-
-  _states: dict[str, MealyState[InputType, OutputType]]
-  _results: list[StepResult[InputType, OutputType]]
-
-  _current_state: MealyState[InputType, OutputType] | UNSET_TYPE
-  _current_output: OutputType | UNSET_TYPE
-  _current_input: InputType | UNSET_TYPE
-
-  _condition_kwargs: Kwargs
-  _function_kwargs: Kwargs
-  _processor_kwargs: Kwargs
-
-  _stop_condition: StopConditionProtocol[InputType] | None
-  _stop_condition_kwargs: Kwargs
 
   # MARK: Init
   # --------------------------------------------------------------------------------------

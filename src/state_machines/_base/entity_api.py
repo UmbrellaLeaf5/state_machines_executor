@@ -14,10 +14,6 @@ from ..utils.types import (
   UNSET_TYPE,
   UNSET_VAL,
   Kwargs,
-  MealyStateString,
-  MealyTransitionTuple,
-  MooreStateTuple,
-  MooreTransitionTuple,
   ResultTuple,
 )
 from .state import BaseState
@@ -29,8 +25,8 @@ class BaseEntityApi[
   OutputType,
   StateType: BaseState,
   TransitionType: BaseTransition,
-  PresentedStateType: (MealyStateString, MooreStateTuple),
-  PresentedTransitionType: (MealyTransitionTuple, MooreTransitionTuple),
+  PresentedStateType: str | tuple,
+  PresentedTransitionType: tuple,
 ](ABC):
   """
   Базовый класс для управления сущностями автоматов Мили и Мура.
