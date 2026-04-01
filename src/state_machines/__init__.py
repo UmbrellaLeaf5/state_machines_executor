@@ -8,11 +8,18 @@ from .moore import (
   MooreState,
   MooreTransition,
 )
-from .utils import StepData, StepReason, StepResult
+from .utils.protocols import (
+  InputProcessorProtocol,
+  OutputFunctionProtocol,
+  StopConditionProtocol,
+  TransConditionProtocol,
+)
+from .utils.step import StepData, StepReason, StepResult
 from .utils.types import Kwargs
 
 
 __all__ = [
+  "InputProcessorProtocol",
   "Kwargs",
   "MealyMachine",
   "MealyState",
@@ -20,7 +27,10 @@ __all__ = [
   "MooreMachine",
   "MooreState",
   "MooreTransition",
+  "OutputFunctionProtocol",
   "StepData",
   "StepReason",
   "StepResult",
+  "StopConditionProtocol",
+  "TransConditionProtocol",
 ]

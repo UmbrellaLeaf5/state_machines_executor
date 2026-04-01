@@ -6,9 +6,9 @@ from .transition import BaseTransition
 
 class BaseState[InputType, TransitionType: BaseTransition](ABC):
   """
-  Базовый протокол состояния.
+  Базовый класс состояния.
 
-  Определяет минимальный интерфейс для состояния в автомате.
+  Определяет минимальный интерфейс и общую реализацию для состояния в автомате.
   """
 
   name: str

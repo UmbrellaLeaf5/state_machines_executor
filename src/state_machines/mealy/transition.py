@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..base import BaseTransition
-from ..utils import (
+from .._base import BaseTransition
+from ..utils.protocols import (
   InputProcessorProtocol,
   OutputFunctionProtocol,
   TransConditionProtocol,

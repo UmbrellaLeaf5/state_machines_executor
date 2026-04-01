@@ -7,7 +7,7 @@
 import warnings
 from collections.abc import Callable
 
-from ..utils import StepData, StepReason, StepResult
+from ..utils.step import StepData, StepReason, StepResult
 from ..utils.types import UNSET_TYPE
 from ._entity_api import MealyEntityApi
 from .state import MealyTransition

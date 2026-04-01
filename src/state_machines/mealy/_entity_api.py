@@ -7,15 +7,13 @@
 
 import warnings
 
-from ..utils import (
+from ..utils.protocols import (
   InputProcessorProtocol,
   OutputFunctionProtocol,
-  StepData,
-  StepReason,
-  StepResult,
   StopConditionProtocol,
   TransConditionProtocol,
 )
+from ..utils.step import StepData, StepReason, StepResult
 from ..utils.types import UNSET_TYPE, UNSET_VAL, Kwargs, MealyTransitionTuple, ResultTuple
 from .state import MealyState, MealyTransition
 

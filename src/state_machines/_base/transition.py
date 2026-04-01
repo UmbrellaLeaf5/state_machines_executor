@@ -1,14 +1,14 @@
 from abc import ABC
 
-from ..utils import InputProcessorProtocol, TransConditionProtocol
+from ..utils.protocols import InputProcessorProtocol, TransConditionProtocol
 from ..utils.types import Kwargs
 
 
 class BaseTransition[InputType](ABC):
   """
-  Базовый протокол перехода.
+  Базовый класс перехода.
 
-  Определяет минимальный интерфейс для перехода в автомате.
+  Определяет минимальный интерфейс и общую реализацию для перехода в автомате.
   """
 
   source_state: str

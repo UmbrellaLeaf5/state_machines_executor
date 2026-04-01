@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..base import BaseState
-from ..utils import (
-  OutputFunctionProtocol,
-)
+from .._base import BaseState
+from ..utils.protocols import OutputFunctionProtocol
 from ..utils.types import Kwargs
 from .transition import MooreTransition
 
