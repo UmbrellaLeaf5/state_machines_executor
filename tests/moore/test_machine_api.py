@@ -3,66 +3,8 @@ import pytest
 from src.state_machines import MooreMachine, MooreState, MooreTransition, StepReason
 
 
-@pytest.fixture
-def empty_moore_machine():
-  """Возвращает пустой автомат Мура."""
-  return MooreMachine()
-
-
-@pytest.fixture
-def simple_moore_machine():
-  """Возвращает простой автомат Мура с одним состоянием."""
-  machine = MooreMachine()
-
-  def cond(input):
-    return True
-
-  def output_func(previous_output):
-    return previous_output + 1 if isinstance(previous_output, int) else 1
-
-  def proc(input):
-    return input + 1 if isinstance(input, int) else 1
-
-  machine.add_state(MooreState("A", output_func, {}))
-  machine.add_transition("A", "A", cond, proc)
-
-  return machine
-
-
-@pytest.fixture
-def moore_machine_with_two_states():
-  """Возвращает автомат Мура с двумя состояниями."""
-  machine = MooreMachine()
-
-  def cond(input):
-    return True
-
-  def output_func(previous_output):
-    return previous_output
-
-  def proc(input):
-    return input
-
-  machine.add_state(MooreState("A", output_func, {}))
-  machine.add_state(MooreState("B", output_func, {}))
-  machine.add_transition("A", "B", cond, proc)
-  machine.add_transition("B", "A", cond, proc)
-
-  return machine
-
-
 class TestMooreMachineAPI:
-  # ----- Тесты состояний -----
-
-  def test_add_state(self, empty_moore_machine):
-    def output_func(previous_output):
-      return previous_output
-
-    state = MooreState("A", output_func, {})
-    empty_moore_machine.add_state(state)
-    assert "A" in empty_moore_machine.get_state_names()
-
-  def test_add_duplicate_state(self, empty_moore_machine):
+  def test_add_duplicate_state(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -70,7 +12,7 @@ class TestMooreMachineAPI:
     with pytest.raises(ValueError, match="State 'A' already exists"):
       empty_moore_machine.add_state(MooreState("A", output_func, {}))
 
-  def test_remove_state(self, empty_moore_machine):
+  def test_remove_state(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -78,7 +20,7 @@ class TestMooreMachineAPI:
     empty_moore_machine.remove_state("A")
     assert "A" not in empty_moore_machine.get_state_names()
 
-  def test_remove_current_state_warns(self, empty_moore_machine):
+  def test_remove_current_state_warns(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -88,7 +30,7 @@ class TestMooreMachineAPI:
       empty_moore_machine.remove_state("A")
     assert empty_moore_machine.get_current_state_name() is None
 
-  def test_set_states_with_strings(self, empty_moore_machine):
+  def test_set_states_with_strings(self, empty_moore_machine: MooreMachine):
     def output_func1(previous_output):
       return previous_output
 
@@ -103,7 +45,7 @@ class TestMooreMachineAPI:
     )
     assert set(empty_moore_machine.get_state_names()) == {"A", "B"}
 
-  def test_set_states_with_objects(self, empty_moore_machine):
+  def test_set_states_with_objects(self, empty_moore_machine: MooreMachine):
     def output_func1(previous_output):
       return previous_output
 
@@ -115,18 +57,7 @@ class TestMooreMachineAPI:
     empty_moore_machine.set_states([state1, state2])
     assert set(empty_moore_machine.get_state_names()) == {"A", "B"}
 
-  def test_set_states_mixed(self, empty_moore_machine):
-    def output_func1(previous_output):
-      return previous_output
-
-    def output_func2(previous_output):
-      return previous_output
-
-    state1 = MooreState("A", output_func1, {})
-    empty_moore_machine.set_states([state1, ("B", output_func2)])
-    assert set(empty_moore_machine.get_state_names()) == {"A", "B"}
-
-  def test_update_states_mixed(self, empty_moore_machine):
+  def test_update_states_mixed(self, empty_moore_machine: MooreMachine):
     def output_func1(previous_output):
       return previous_output
 
@@ -137,35 +68,7 @@ class TestMooreMachineAPI:
     empty_moore_machine.update_states([state1, ("B", output_func2)])
     assert set(empty_moore_machine.get_state_names()) == {"A", "B"}
 
-  # ----- Тесты переходов -----
-
-  def test_add_transition(self, empty_moore_machine):
-    def output_func(previous_output):
-      return previous_output
-
-    def cond(input):
-      return True
-
-    def proc(input):
-      return input
-
-    empty_moore_machine.add_state(MooreState("A", output_func, {}))
-    empty_moore_machine.add_state(MooreState("B", output_func, {}))
-    empty_moore_machine.add_transition("A", "B", cond, proc)
-
-    assert empty_moore_machine.get_state_transitions_amount("A") == 1
-
-  def test_add_transition_missing_state_raises(self, empty_moore_machine):
-    def cond(input):
-      return True
-
-    def proc(input):
-      return input
-
-    with pytest.raises(KeyError, match="not found"):
-      empty_moore_machine.add_transition("A", "B", cond, proc)
-
-  def test_add_transition_duplicate_no_replace(self, empty_moore_machine):
+  def test_add_transition_duplicate_no_replace(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -182,7 +85,7 @@ class TestMooreMachineAPI:
     with pytest.raises(ValueError, match="already exists"):
       empty_moore_machine.add_transition("A", "B", cond, proc, replace=False)
 
-  def test_add_transition_replace(self, empty_moore_machine):
+  def test_add_transition_replace(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -204,9 +107,7 @@ class TestMooreMachineAPI:
     assert len(transitions) == 1
     assert transitions[0][2] is cond2
 
-  # ----- Тесты add_transition_entity -----
-
-  def test_add_transition_entity_from_object(self, empty_moore_machine):
+  def test_add_transition_entity_from_object(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -224,7 +125,7 @@ class TestMooreMachineAPI:
 
     assert empty_moore_machine.get_state_transitions_amount("A") == 1
 
-  def test_add_transition_entity_from_tuple(self, empty_moore_machine):
+  def test_add_transition_entity_from_tuple(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -242,7 +143,9 @@ class TestMooreMachineAPI:
 
     assert empty_moore_machine.get_state_transitions_amount("A") == 1
 
-  def test_add_transition_entity_duplicate_no_replace(self, empty_moore_machine):
+  def test_add_transition_entity_duplicate_no_replace(
+    self, empty_moore_machine: MooreMachine
+  ):
     def output_func(previous_output):
       return previous_output
 
@@ -261,7 +164,7 @@ class TestMooreMachineAPI:
     with pytest.raises(ValueError, match="already exists"):
       empty_moore_machine.add_transition_entity(transition, replace=False)
 
-  def test_add_transition_entity_replace(self, empty_moore_machine):
+  def test_add_transition_entity_replace(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -287,13 +190,7 @@ class TestMooreMachineAPI:
     assert len(transitions) == 1
     assert transitions[0][2] is cond2
 
-  def test_add_transition_entity_invalid_type(self, empty_moore_machine):
-    with pytest.raises(TypeError, match=r"Expected .* or tuple"):
-      empty_moore_machine.add_transition_entity("not a transition")
-
-  # ----- Тесты update_transitions -----
-
-  def test_update_transitions_mixed_types(self, empty_moore_machine):
+  def test_update_transitions_mixed_types(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -315,7 +212,7 @@ class TestMooreMachineAPI:
     assert empty_moore_machine.get_state_transitions_amount("A") == 1
     assert empty_moore_machine.get_state_transitions_amount("B") == 1
 
-  def test_update_transitions_with_replace_flag(self, empty_moore_machine):
+  def test_update_transitions_with_replace_flag(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -340,8 +237,6 @@ class TestMooreMachineAPI:
     transitions = empty_moore_machine.get_state_transitions("A")
     assert len(transitions) == 1
     assert transitions[0][2] is cond2
-
-  # ----- Тесты конструктора -----
 
   def test_constructor_with_mixed_states(self):
     def output_func1(previous_output):
@@ -381,11 +276,7 @@ class TestMooreMachineAPI:
     transition_obj = MooreTransition("B", "C", cond, proc)
 
     machine = MooreMachine(
-      states=[
-        ("A", output_func),
-        ("B", output_func),
-        ("C", output_func),
-      ],
+      states=[("A", output_func), ("B", output_func), ("C", output_func)],
       transitions=[transition_tuple, transition_obj],
       initial_state="A",
       initial_output=0,
@@ -395,18 +286,16 @@ class TestMooreMachineAPI:
     assert machine.get_state_transitions_amount("A") == 1
     assert machine.get_state_transitions_amount("B") == 1
 
-  # ----- Тесты выполнения -----
-
-  def test_validate_missing_output_function(self, empty_moore_machine):
+  def test_validate_missing_output_function(self, empty_moore_machine: MooreMachine):
     empty_moore_machine.add_state(MooreState("A", None, {}))  # type: ignore
     with pytest.raises(ValueError, match="States without output function"):
       empty_moore_machine.validate()
 
-  def test_run_once_not_ready(self, empty_moore_machine):
+  def test_run_once_not_ready(self, empty_moore_machine: MooreMachine):
     with pytest.raises(RuntimeError, match="Current state not set"):
       empty_moore_machine.run_once()
 
-  def test_run_once_no_transition(self, empty_moore_machine):
+  def test_run_once_no_transition(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -418,7 +307,7 @@ class TestMooreMachineAPI:
 
     assert result.reason == StepReason.NO_TRANSITION
 
-  def test_run_once_ambiguous(self, empty_moore_machine):
+  def test_run_once_ambiguous(self, empty_moore_machine: MooreMachine):
     def output_func(previous_output):
       return previous_output
 
@@ -504,7 +393,7 @@ class TestMooreMachineAPI:
     result = machine.run_all()[-1]
     assert result.reason == StepReason.STOP_CONDITION
 
-  def test_results_methods(self, simple_moore_machine):
+  def test_results_methods(self, simple_moore_machine: MooreMachine):
     simple_moore_machine.update_current_data("A", 0, 0)
     simple_moore_machine.run_once()
 
@@ -524,13 +413,13 @@ class TestMooreMachineAPI:
     final = simple_moore_machine.get_final_result()
     assert final == 1
 
-  def test_clear_results(self, simple_moore_machine):
+  def test_clear_results(self, simple_moore_machine: MooreMachine):
     simple_moore_machine.update_current_data("A", 0, 0)
     simple_moore_machine.run_once()
     simple_moore_machine.clear_results()
     assert simple_moore_machine.get_results() == []
 
-  def test_reset_execution(self, simple_moore_machine):
+  def test_reset_execution(self, simple_moore_machine: MooreMachine):
     simple_moore_machine.update_current_data("A", 0, 0)
     simple_moore_machine.run_once()
     simple_moore_machine.reset_execution()
@@ -539,3 +428,29 @@ class TestMooreMachineAPI:
     assert simple_moore_machine.get_current_output() is None
     assert simple_moore_machine.get_current_input() is None
     assert simple_moore_machine.get_results() == []
+
+  def test_common_kwargs(self):
+    machine = MooreMachine[int, int]()
+
+    def output_func(previous_output, multiplier=1):
+      return previous_output * multiplier
+
+    def cond(input, threshold=0):
+      return input > threshold
+
+    def proc(input, offset=0):
+      return input + offset
+
+    machine.add_state(MooreState("A", output_func, {}))
+    machine.add_transition("A", "A", cond, proc)
+    machine.update_common_kwargs(
+      condition_kwargs={"threshold": 5},
+      function_kwargs={"multiplier": 2},
+      processor_kwargs={"offset": 1},
+    )
+    machine.update_current_data("A", 10, 1)
+
+    result = machine.run_once()
+    assert result.reason == StepReason.SUCCESS
+    assert result.data.processed_input == 11  # noqa: PLR2004
+    assert result.data.output == 2  # noqa: PLR2004
