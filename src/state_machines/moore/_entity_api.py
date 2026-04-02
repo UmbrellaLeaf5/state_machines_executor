@@ -165,7 +165,7 @@ class MooreEntityApi[InputType, OutputType](
       if not isinstance(name, str):
         raise TypeError(f"State name must be `str`, got `{type(name)}`")
 
-      state = MooreState[InputType, OutputType](name, output_function, {})
+      state = MooreState(name, output_function, {})
 
     elif isinstance(item, MooreState):
       state = item

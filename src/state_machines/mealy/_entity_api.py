@@ -234,7 +234,7 @@ class MealyEntityApi[InputType, OutputType](
 
   def _ensure_state_exists(self, state_name: str) -> None:
     if state_name not in self._states:
-      self._states[state_name] = MealyState[InputType, OutputType](state_name, {})
+      self._states[state_name] = MealyState(state_name, {})
 
   # --------------------------------------------------------------------------------------
 

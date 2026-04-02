@@ -1,9 +1,11 @@
-from collections.abc import Callable
+from src.state_machines import (
+  MealyMachine,
+  OutputFunctionProtocol,
+  TransConditionProtocol,
+)
 
-from src.state_machines import MealyMachine
 
-
-def make_condition(bit: str) -> Callable[[str], bool]:
+def make_condition(bit: str) -> TransConditionProtocol[str]:
   """Возвращает условие, которое истинно, если последний бит входной строки равен bit."""
 
   def condition(input: str) -> bool:
@@ -12,7 +14,7 @@ def make_condition(bit: str) -> Callable[[str], bool]:
   return condition
 
 
-def make_output_adder(bit: str) -> Callable[[str], str]:
+def make_output_adder(bit: str) -> OutputFunctionProtocol[str]:
   """Возвращает функцию выхода, добавляющую bit в начало предыдущего выхода."""
 
   def add(previous_output: str) -> str:
@@ -28,13 +30,14 @@ def shift_processor(input: str) -> str:
 
 def build_transitions_from_dict(
   states_dict: dict,
-) -> list[tuple[str, str, Callable, Callable, Callable]]:
+) -> list:
   """
   Преобразует старый формат словаря состояний в список переходов для MealyMachine.
   Формат states_dict: {state_name: {0: (next_state, output), 1: (next_state, output)}}
   """
 
   transitions = []
+
   for src, trans in states_dict.items():
     for bit, (dst, out_bit) in trans.items():
       cond = make_condition(str(bit))
@@ -60,7 +63,7 @@ def make_binary_machine(
 
   transitions = build_transitions_from_dict(states_dict)
 
-  return MealyMachine[str, str](
+  return MealyMachine(
     transitions=transitions,
     initial_state=initial_state,
     initial_output="",

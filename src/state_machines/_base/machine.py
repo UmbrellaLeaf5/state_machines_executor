@@ -173,7 +173,7 @@ class BaseMachine[
     if self._stop_condition and self._stop_condition(
       self._current_input, **self._stop_condition_kwargs
     ):
-      return StepResult[InputType, OutputType](reason=StepReason.STOP_CONDITION)
+      return StepResult(reason=StepReason.STOP_CONDITION)
 
     state_output = self._execute_state()
 
@@ -190,7 +190,7 @@ class BaseMachine[
         stacklevel=2,
       )
 
-      return StepResult[InputType, OutputType](reason=StepReason.NO_TRANSITION)
+      return StepResult(reason=StepReason.NO_TRANSITION)
 
     if len(available_transitions) > 1:
       raise RuntimeError(self._format_ambiguous_error(available_transitions))
@@ -215,7 +215,7 @@ class BaseMachine[
 
     step = StepResult(
       reason=StepReason.SUCCESS,
-      data=StepData.from_tuple((processed_input, output)),
+      data=StepData(processed_input, output),
     )
 
     self._results.append(step)
