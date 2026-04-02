@@ -274,6 +274,8 @@ class BaseEntityApi[
   def add_transition(self, *args, **kwargs) -> None:
     """Добавляет переход. Реализуется в конкретных классах."""
 
+  # --------------------------------------------------------------------------------------
+
   def _add_transition(
     self,
     source_state: str,
@@ -319,6 +321,8 @@ class BaseEntityApi[
     else:
       source.add_transition(transition)
 
+  # --------------------------------------------------------------------------------------
+
   @abstractmethod
   def _ensure_state_exists(self, state_name: str) -> None:
     """
@@ -333,6 +337,8 @@ class BaseEntityApi[
     Raises:
       `KeyError`: Если состояние не существует и автомат Мура.
     """
+
+  # --------------------------------------------------------------------------------------
 
   @abstractmethod
   def _create_transition(
@@ -356,6 +362,91 @@ class BaseEntityApi[
     Returns:
       Объект перехода конкретного типа.
     """
+
+  # --------------------------------------------------------------------------------------
+
+  @abstractmethod
+  def add_transition_entity(
+    self,
+    transition: PresentedTransitionType | TransitionType,
+    replace: bool = False,
+  ) -> None:
+    """
+    Добавляет переход из готового объекта или кортежа.
+
+    Args:
+        transition: Объект перехода или кортеж с параметрами.
+        replace: Заменять существующий переход или нет.
+
+    Raises:
+      `ValueError`: Если переход уже существует и `replace=False`.
+      `TypeError`: Если передан неподдерживаемый тип.
+    """
+
+  # --------------------------------------------------------------------------------------
+
+  def _add_transition_entity(
+    self, transition: TransitionType, replace: bool = False
+  ) -> None:
+    """
+    Добавляет переход из готового объекта.
+
+    Args:
+        transition: Объект перехода (`TransitionType`).
+        replace: Если True и переход уже существует, заменяет его.
+            Если False и переход существует, вызывает ошибку.
+
+    Raises:
+        `KeyError`: Если исходное или целевое состояние не существует
+            (после вызова `_ensure_state_exists`).
+        `ValueError`: Если переход уже существует и `replace=False`.
+    """
+
+    self._ensure_state_exists(transition.source_state)
+    self._ensure_state_exists(transition.target_state)
+
+    source = self._states[transition.source_state]
+
+    if source.has_transition(transition.target_state):
+      if not replace:
+        raise ValueError(
+          f"Transition from '{transition.source_state}' to '{transition.target_state}'"
+          f" already exists. Use `replace=True` to replace it."
+        )
+
+      source.replace_transition(transition)
+
+    else:
+      source.add_transition(transition)
+
+  # --------------------------------------------------------------------------------------
+
+  def _add_transition_tuple(
+    self,
+    transition: PresentedTransitionType,
+    args_amount: int,
+    replace: bool = False,
+  ) -> None:
+    """
+    Добавляет переход из кортежа.
+
+    Args:
+        transition: Кортеж с параметрами перехода.
+        args_amount: Ожидаемое количество элементов в кортеже
+            (5 для Мили, 4 для Мура).
+        replace: Если `True` и переход уже существует, заменяет его.
+            Если `False` и переход существует, вызывает ошибку.
+
+    Raises:
+        `TypeError`: Если длина кортежа не совпадает с `args_amount`.
+        `TypeError`: Если `add_transition` не может распаковать кортеж.
+        `ValueError`: Если переход уже существует и `replace=False`.
+    """
+
+    if len(transition) != args_amount:
+      raise TypeError(f"Expected tuple of {args_amount} elements, got {len(transition)}")
+
+    self.add_transition(*transition, replace=replace)
 
   # --------------------------------------------------------------------------------------
 
@@ -386,33 +477,37 @@ class BaseEntityApi[
 
   def set_transitions(
     self,
-    transitions: list[PresentedTransitionType],
+    transitions: list[PresentedTransitionType | TransitionType],
+    replace: bool = False,
   ) -> None:
     """
     Заменяет все переходы новым списком.
 
     Args:
-      transitions: Список переходов в виде кортежей.
+      transitions: Список переходов в виде кортежей или PresentedTransitionType.
+      replace: Заменять существующий переход или нет.
     """
 
     self.clear_transitions()
-    self.update_transitions(transitions)
+    self.update_transitions(transitions, replace=replace)
 
   # --------------------------------------------------------------------------------------
 
   def update_transitions(
     self,
-    transitions: list[PresentedTransitionType],
+    transitions: list[PresentedTransitionType | TransitionType],
+    replace: bool = False,
   ) -> None:
     """
     Добавляет переходы из списка.
 
     Args:
       transitions: Список переходов в виде кортежей.
+      replace: Заменять существующий переход или нет.
     """
 
     for trans in transitions:
-      self.add_transition(*trans)
+      self.add_transition_entity(trans, replace=replace)
 
   # --------------------------------------------------------------------------------------
 

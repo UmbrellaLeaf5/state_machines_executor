@@ -13,7 +13,8 @@ from ..utils.protocols import (
   TransConditionProtocol,
 )
 from ..utils.types import UNSET_VAL, Kwargs
-from .state import MooreState, MooreTransition
+from .state import MooreState
+from .transition import MooreTransition
 from .types import MooreStateTuple, MooreTransitionTuple
 
 
@@ -50,7 +51,8 @@ class MooreEntityApi[InputType, OutputType](
     self,
     states: list[MooreStateTuple[OutputType] | MooreState[InputType, OutputType]]
     | None = None,
-    transitions: list[MooreTransitionTuple[InputType]] | None = None,
+    transitions: list[MooreTransitionTuple[InputType] | MooreTransition[InputType]]
+    | None = None,
     initial_state: str | None = None,
     initial_output: OutputType | None = None,
     initial_input: InputType | None = None,
@@ -67,41 +69,41 @@ class MooreEntityApi[InputType, OutputType](
     и переходы позже через соответствующие методы.
 
     Args:
-      states: Список состояний. Каждый элемент может быть:
-        - кортежем `(name, output_function)` — для быстрого создания состояния
-        - объектом `MooreState` — если состояние уже сконфигурировано
+        states: Список состояний. Каждый элемент может быть:
+            - кортежем `(name, output_function)` - для быстрого создания состояния
+            - объектом `MooreState` - если состояние уже сконфигурировано
 
-      transitions: Список переходов. Каждый переход - кортеж из четырёх элементов: (
-        `source_state`, `target_state`, `condition`, `processor`).
-        - `source_state`: имя исходного состояния
-        - `target_state`: имя целевого состояния
-        - `condition`: функция-условие, определяющая, можно ли выполнить переход
-        - `processor`: функция обработки входа
+        transitions: Список переходов. Каждый элемент может быть:
+            - кортежем из четырёх элементов: `(
+            source_state, target_state, condition, processor)`
+            - объектом `MooreTransition`
 
-      initial_state: Имя начального состояния.
-        Если указан, автомат будет готов к запуску после установки
-        `initial_output` и `initial_input`.
+        initial_state: Имя начального состояния.
+            Если указан, автомат будет готов к запуску после установки
+            `initial_output` и `initial_input`.
 
-      initial_output: Начальное выходное значение. Используется вместе с `initial_state`.
+        initial_output: Начальное выходное значение.
+            Используется вместе с `initial_state`.
 
-      initial_input: Начальное входное значение. Используется вместе с `initial_state`.
+        initial_input: Начальное входное значение.
+            Используется вместе с `initial_state`.
 
-      stop_condition: Функция-условие остановки.
-        Вызывается перед каждым шагом выполнения.
-        Принимает текущий вход и возвращает `True` для остановки автомата.
-        Результат шага в этом случае будет иметь `reason = STOP_CONDITION`.
+        stop_condition: Функция-условие остановки.
+            Вызывается перед каждым шагом выполнения.
+            Принимает текущий вход и возвращает `True` для остановки автомата.
+            Результат шага в этом случае будет иметь `reason = STOP_CONDITION`.
 
-      stop_condition_kwargs: Дополнительные именованные аргументы для `stop_condition`.
-        Передаются в функцию как `**kwargs` при каждом вызове.
+        stop_condition_kwargs: Дополнительные именованные аргументы для `stop_condition`.
+            Передаются в функцию как `**kwargs` при каждом вызове.
 
-      condition_kwargs: Дополнительные именованные аргументы для всех условий переходов.
-        Передаются в каждую функцию `condition` как `**kwargs`.
+        condition_kwargs: Дополнительные именованные аргументы для всех условий переходов.
+            Передаются в каждую функцию `condition` как `**kwargs`.
 
-      function_kwargs: Доп. именованные аргументы для всех функций выхода состояний.
-        Передаются в каждую `output_function` как `**kwargs`.
+        function_kwargs: Доп. именованные аргументы для всех функций выхода состояний.
+            Передаются в каждую `output_function` как `**kwargs`.
 
-      processor_kwargs: Дополнительные именованные аргументы для всех процессоров входа.
-        Передаются в каждый `input_processor` как `**kwargs`.
+        processor_kwargs: Дополнительные именованные аргументы для всех процессоров входа.
+            Передаются в каждый `input_processor` как `**kwargs`.
     """
 
     self._states = {}
@@ -212,6 +214,34 @@ class MooreEntityApi[InputType, OutputType](
       input_processor,
       replace,
     )
+
+  # --------------------------------------------------------------------------------------
+
+  def add_transition_entity(
+    self,
+    transition: MooreTransitionTuple[InputType] | MooreTransition[InputType],
+    replace: bool = False,
+  ) -> None:
+    """
+    Добавляет переход из готового объекта или кортежа.
+
+    Args:
+        transition: Объект MooreTransition или кортеж из 4 элементов.
+        replace: Заменять существующий переход или нет.
+
+    Raises:
+      `ValueError`: Если переход уже существует и `replace=False`.
+      `TypeError`: Если передан неподдерживаемый тип.
+    """
+
+    if isinstance(transition, MooreTransition):
+      self._add_transition_entity(transition, replace)
+
+    elif isinstance(transition, tuple):
+      self._add_transition_tuple(transition, 4, replace)
+
+    else:
+      raise TypeError(f"Expected {MooreTransition} or tuple, got {type(transition)}")
 
   # --------------------------------------------------------------------------------------
 

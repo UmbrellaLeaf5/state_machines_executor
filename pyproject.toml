@@ -11,6 +11,3 @@ state-machine-editor = "gui.main:main"
 
 [tool.uv]
 package = true
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
