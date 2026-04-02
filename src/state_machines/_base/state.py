@@ -37,7 +37,7 @@ class BaseState[InputType, TransitionType: BaseTransition](ABC):
       transition: Объект перехода.
 
     Raises:
-      ValueError: Если `transition.source_state` не совпадает с именем состояния
+      `ValueError`: Если `transition.source_state` не совпадает с именем состояния
         или переход в целевое состояние уже существует.
     """
 
@@ -64,7 +64,7 @@ class BaseState[InputType, TransitionType: BaseTransition](ABC):
       transition: Новый объект перехода.
 
     Raises:
-      ValueError: Если `transition.source_state` не совпадает с именем состояния
+      `ValueError`: Если `transition.source_state` не совпадает с именем состояния
         или переход в целевое состояние не существует.
     """
 
@@ -91,7 +91,7 @@ class BaseState[InputType, TransitionType: BaseTransition](ABC):
       target_state: Имя целевого состояния.
 
     Raises:
-      KeyError: Если переход не существует.
+      `KeyError`: Если переход не существует.
     """
 
     if target_state not in self.transitions:

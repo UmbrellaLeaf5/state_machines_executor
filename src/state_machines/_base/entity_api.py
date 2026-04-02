@@ -147,7 +147,7 @@ class BaseEntityApi[
       states: Список состояний в любом допустимом формате.
 
     Raises:
-      ValueError: Если в списке есть дубликаты имён или состояние уже существует.
+      `ValueError`: Если в списке есть дубликаты имён или состояние уже существует.
     """
 
     items: list[StateType] = []
@@ -183,8 +183,8 @@ class BaseEntityApi[
       Кортеж из имени состояния и объекта состояния.
 
     Raises:
-      TypeError: При некорректном формате.
-      ValueError: При некорректных данных.
+      `TypeError`: При некорректном формате.
+      `ValueError`: При некорректных данных.
     """
 
   # --------------------------------------------------------------------------------------
@@ -208,7 +208,7 @@ class BaseEntityApi[
       Список кортежей, представляющих переходы.
 
     Raises:
-      KeyError: Если состояние не существует.
+      `KeyError`: Если состояние не существует.
     """
 
     if state_name not in self._states:
@@ -295,7 +295,7 @@ class BaseEntityApi[
       replace: Заменять существующий переход или нет.
 
     Raises:
-      ValueError: Если переход уже существует и `replace=False`.
+      `ValueError`: Если переход уже существует и `replace=False`.
     """
 
     self._ensure_state_exists(source_state)
